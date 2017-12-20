@@ -302,15 +302,15 @@
 <blockquote>
 <p>注意</p>
 <blockquote>
-<p>本章的这些步骤在docker镜像<code>1.1.0-preview</code>版本(tag)和相关工具中已经验证过。确保你已经下载了适合的镜像版本，或者你是从比Fabric“1.1.0-preview”更新的分支上构建的二进制包。  </p>
+<p>本章的这些步骤在docker镜像<code>1.1.0-preview</code>版本(tag)和相关工具中已经验证过。确保你已经下载了适合的镜像版本和二进制包，或者你从比Fabric“1.1.0-preview”标签更新的分支上构建的二进制包。  </p>
 </blockquote>
 </blockquote>
 <p>本章是<a href="https://hyperledgercn.github.io/hyperledgerDocs/build_network_zh/">构建第一个fabric网络</a>的后续，会演示增加一个新组织<code>Org3</code>到自动生成的应用信道<code>mychannel</code>。它假定你已经对<a href="https://github.com/wbwangk/wbwangk.github.io/wiki/Hyperledger#%E5%90%AF%E5%8A%A8%E9%A6%96%E4%B8%AA%E7%BD%91%E7%BB%9Cfirst-network">BYFN</a>示范很懂了，包括会使用工具<code>cryptogen</code>和<code>configtxgen</code>。  </p>
-<p>这篇文章仅聚焦于集成一个新组织，然而用同样的方法可以更新其他信道配置（如更新修改规则，改变批大小等）。示范的操作是组织管理员职责，而不是链码或应用开发者职责。</p>
+<p>这篇文章仅聚焦于集成一个新组织，然而用同样的方法可以更新其他信道配置（如更新修改规则、改变批大小等）。示范的操作是组织管理员职责，而不是链码或应用开发者职责。</p>
 <blockquote>
 <p>注意</p>
 <blockquote>
-<p>确保已经安装了必要的Fabric镜像和实用程序，并且自动化脚本<code>byfn.sh</code>在继续操作前在你的计算机上运行没有报错。即将到来的步骤依赖于生成的网络和工件。如果尚未配置机器，请参阅<a href="http://hyperledger-fabric.readthedocs.io/en/latest/samples.html">Hyperledger Fabric示范</a>文档。提供的命令还假定Fabric实用程序存在于<code>fabric-samples</code>目录下的<code>bin</code>根目录中。如果已将这些二进制文件路径导出到了PATH变量中，则可以相应地修改这些命令，而不必传递绝对路径。  </p>
+<p>确保已经安装了必要的Fabric镜像和实用程序，并且自动化脚本<code>byfn.sh</code>在继续操作前在你的计算机上运行没有报错。即将到来的步骤依赖于生成的网络和工件。如果尚未配置机器，请参阅<a href="http://hyperledger-fabric.readthedocs.io/en/latest/prereqs.html">前提条件</a>和<a href="http://hyperledger-fabric.readthedocs.io/en/latest/samples.html">Hyperledger Fabric示范</a>文档。提供的命令还假定Fabric实用程序存在于<code>fabric-samples</code>目录下的<code>bin</code>根目录中。如果已将这些二进制文件路径导出到了PATH变量中，则可以相应地修改这些命令，而不必传递绝对路径。  </p>
 </blockquote>
 </blockquote>
 <h3 id="_2">配置环境变量<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
@@ -327,15 +327,15 @@
 <pre><code class="bash">./byfn.sh -m up
 </code></pre>
 
-<p>屏幕上会显示很多日志，并锁定标准输入，除非按ctrl_C。在另一个终端窗口中，切换到<code>org3-artifacts</code>子目录。</p>
+<p>在另一个终端窗口中，切换到<code>org3-artifacts</code>子目录。</p>
 <pre><code class="bash">cd org3-artifacts
 </code></pre>
 
-<p>当前目录下有兴趣的文件有两个<code>org3-crypto.yaml</code>和<code>configtx.yaml</code>。首先，为org3生成密钥材料：</p>
+<p>当前目录下有兴趣的文件有两个<code>org3-crypto.yaml</code>和<code>configtx.yaml</code>。首先，为org3生成加密材料：</p>
 <pre><code class="bash">../../bin/cryptogen generate --config=./org3-crypto.yaml
 </code></pre>
 
-<p>上述命令会读取新的加密yaml文件<code>org3-crypto.yaml</code>，利用<code>cryptogen</code>工具为Org3中间CA生成key和证书，并且有两个peer绑定到这个新组织。与BYFN实现一起，这个密钥材料输出到一个新生成的<code>crypto-config</code>目录中。  </p>
+<p>上述命令会读取新的加密yaml文件<code>org3-crypto.yaml</code>，利用<code>cryptogen</code>工具为Org3中间CA生成密钥和证书，并且有两个peer绑定到这个新组织。与BYFN实现一起，这个加密材料输出到一个新生成的<code>crypto-config</code>目录中。  </p>
 <p>现在使用<code>configtxgen</code>工具输出JSON格式的Org3相关配置材料。作为开始的命令，告诉工具从当前目录下读取<code>configtx.yaml</code>。</p>
 <pre><code class="bash">export FABRIC_CFG_PATH=$PWD &amp;&amp; ../../bin/configtxgen -printOrg Org3MSP &gt; ../channel-artifacts/org3.json
 </code></pre>
@@ -360,12 +360,14 @@
 <pre><code class="bash">docker start cli
 </code></pre>
 
-<p>现在在容器中安装<code>jq</code>工具。这个工具允许我们与<code>configtxlator</code>工具返回的JSON对象进行脚本交互(<code>$$</code>表示在容器中的命令行中)：</p>
-<pre><code class="bash">apt update &amp;&amp; apt install jq
+<p>现在在容器中安装<code>jq</code>工具。这个工具允许我们与<code>configtxlator</code>工具返回的JSON对象进行脚本交互：</p>
+<pre><code class="bash"># Press `y` when prompted by the command
+apt update &amp;&amp; apt install jq
 </code></pre>
 
 <p>启动<code>configtxlator</code>REST服务器(最后的<code>&amp;</code>符号使键盘输入不锁住)：</p>
-<pre><code class="bash">configtxlator start &amp;
+<pre><code class="bash"># Press enter twice
+configtxlator start &amp;
 </code></pre>
 
 <p>设置URL:</p>
@@ -396,7 +398,7 @@
 <pre><code class="bash">2017-11-07 17:17:57.383 UTC [channelCmd] readBlock -&gt; DEBU 011 Received block: 2
 </code></pre>
 
-<p>这是告诉我们<code>mychannel</code>的最新配置区块是区块2，不是创世区块。默认情况下，<code>peer channel fetch config</code>命令返回目标信道的最新配置区块，在本例中是2号区块。当BYFN场景运行时，内嵌脚本执行了两个对信道的附加配置更新。也就是，通过两个信道更新交易定义了两个组织<code>Org1</code>和<code>Org2</code>的锚peer。象这样，我们有了如下配置序列：区块0，创世区块；区块1，Org1锚peer更新；区块2，Org2锚peer更新。  </p>
+<p>这是告诉我们<code>mychannel</code>的最新配置区块是区块2，<strong>不是</strong>创世区块。默认情况下，<code>peer channel fetch config</code>命令返回目标信道的最新配置区块，在本例中是2号区块。当BYFN场景运行时，内嵌脚本执行了两个对信道的附加配置更新。也就是，通过两个信道更新交易定义了两个组织<code>Org1</code>和<code>Org2</code>的锚peer。象这样，我们有了如下配置序列：区块0，创世区块；区块1，Org1锚peer更新；区块2，Org2锚peer更新。  </p>
 <p>现在我们将使用<code>configtxlator</code>服务器将这个信道配置区块解码为人类可以读写的JSON格式。</p>
 <pre><code class="bash">curl -X POST --data-binary @config_block.pb &quot;$CONFIGTXLATOR_URL/protolator/decode/common.Block&quot; | jq . &gt; config_block.json
 </code></pre>
@@ -441,9 +443,15 @@
 </code></pre>
 
 <p>最后一步是切换CLI容器的身份为Org2的Admin用户。我们通过导出对应Org2 MSP的4个环境变量做到这一点。  </p>
-<p><em>注释：下面的演示不能反映真实世界的操作。单个容器永远不应该装载这个网络的密钥材料。相反，更新对象需要安全地通过“带外”传递给Org2管理员进行检查和批准。</em>  </p>
+<blockquote>
+<p>注意</p>
+<blockquote>
+<p>下面的演示不能反映真实世界的操作。单个容器永远不应该装载这个网络的加密材料。相反，更新对象需要安全地通过“带外”(out-of-band)传递给Org2管理员进行检查和批准。  </p>
+</blockquote>
+</blockquote>
 <p>导出Org2的环境变量：</p>
-<pre><code class="bash">export CORE_PEER_LOCALMSPID=&quot;Org2MSP&quot;
+<pre><code class="bash"># you can issue all of these commands at once
+export CORE_PEER_LOCALMSPID=&quot;Org2MSP&quot;
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
 export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
@@ -473,8 +481,7 @@ export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
 <pre><code class="bash">2017-11-15 15:41:05.000 UTC [kvledger] CommitWithPvtData -&gt; DEBU 774 Channel [mychannel]: Committing block [5] to storage
 </code></pre>
 
-<p>遵循后续演示过程来获取和解码新配置区块
-如果您想查看新配置区块的内容，请按照演示过程获取并解码新配置区块。让我们继续&hellip;  </p>
+<p>如果您想查看新配置区块的内容，请按照演示过程获取并解码新配置区块。让我们继续&hellip;  </p>
 <h3 id="org3">将Org3加入信道<a class="headerlink" href="#org3" title="Permanent link">&para;</a></h3>
 <p>在这时，信道配置已经更新到包含了我们的新组织<code>Org3</code>，这意味着此成员的peer可以成功加入这个信道。  </p>
 <p>首先，让我们启动包含Org3 peer和Org3特定CLI的容器。从<code>first-network</code>目录启动Org3 docker compose：</p>
@@ -485,7 +492,7 @@ export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
 <pre><code class="bash">docker exec -it Org3cli bash
 </code></pre>
 
-<p>就像我们在初始CLI容器中做的那样，导出两个关键环境变量<code>ORDERER_CA``CHANNEL_NAME</code>：</p>
+<p>就像我们在初始CLI容器中做的那样，导出两个关键环境变量<code>ORDERER_CA</code>和<code>CHANNEL_NAME</code>：</p>
 <pre><code class="bash">export ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem &amp;&amp; export CHANNEL_NAME=mychannel
 </code></pre>
 
@@ -506,12 +513,10 @@ export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
 
 <p>注意，我们发送了一个<code>0</code>来指定我们要获取的信道账本上的第一个区块（即创世区块）。如果我们简单地发送<code>peer channel fetch config</code>命令，则我们会接收到区块5，即定义Org3的更新配置。然而，我们不能在一个下游区块开始账本，反而需要加入区块0。  </p>
 <p>发送<code>peer channel join</code>命令，并传入创世区块<code>mychannel.block</code>：</p>
-<pre><code class="bash">echo $CORE_PEER_TLS_ROOTCERT_FILE &amp;&amp; echo $CORE_PEER_ADDRESS
-peer channel join -b mychannel.block
+<pre><code class="bash">peer channel join -b mychannel.block
 </code></pre>
 
-<p>由于Org3 CLI容器已经在“烧录”的时候设置了CORE_PEER_ADDRESS的值是<code>peer0.org3.example.com:7051</code>，所以上面的<code>peer channel join</code>命令将Org3的第一个peer(即peer0)加入了信道。  </p>
-<p>如果你想为Org3加入第二个peer，导出TLS和ADDRESS变量和重新发出<code>peer channel join</code>命令：</p>
+<p>如果你想为Org3加入第二个peer，就导出TLS和ADDRESS变量并重新发出<code>peer channel join</code>命令：</p>
 <pre><code class="bash">export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.example.com/peers/peer1.org3.example.com/tls/ca.crt &amp;&amp; export CORE_PEER_ADDRESS=peer1.org3.example.com:7051
 peer channel join -b mychannel.block
 </code></pre>
@@ -521,7 +526,7 @@ peer channel join -b mychannel.block
 <pre><code class="bash">peer chaincode install -n mycc -v 2.0 -p github.com/chaincode/chaincode_example02/go/
 </code></pre>
 
-<p>如果你想在Org3的第二个peer上安装链码，修改相应环境变量和重新发送命令。请注意，第二次安装不是强制的，因为您只需要在背书peer或以其他方式与账本接口的peer（即仅查询）上安装链接代码。这种peer上将仍然运行确认逻辑和作为提交者，但没有运行链码的容器。  </p>
+<p>如果你想在Org3的第二个peer上安装链码，修改相应环境变量和重新发送命令。请注意，第二个安装不是强制的，因为您只需要在背书peer或以其他方式与账本接口的peer（即仅查询）上安装链接代码。这种peer上将仍然运行确认逻辑和作为提交者，但没有运行链码的容器。  </p>
 <p>现在跳回到原始CLI容器，并在Org1和Org2 peer上安装新版本链码。我们是用Org2管理员身份递交的信道更新呼叫，所以容器仍以<code>peer0.org2</code>的身份运行：</p>
 <pre><code class="bash">peer chaincode install -n mycc -v 2.0 -p github.com/chaincode/chaincode_example02/go/
 </code></pre>
@@ -554,7 +559,7 @@ export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
 </code></pre>
 
 <p>我们会看到一个响应:<code>Query Result: 90</code>。  </p>
-<p>现在发送一个调用，从<code>a</code>移动<code>10</code>到<code>b</code>：</p>
+<p>现在发送一个调用，从<code>a</code>移动<code>10</code>个数量到<code>b</code>：</p>
 <pre><code class="bash">peer chaincode invoke -o orderer.example.com:7050  --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -c '{&quot;Args&quot;:[&quot;invoke&quot;,&quot;a&quot;,&quot;b&quot;,&quot;10&quot;]}'
 </code></pre>
 
