@@ -97,9 +97,9 @@
         
             <li><a class="toctree-l4" href="#configtxlator">启动configtxlator服务器</a></li>
         
-            <li><a class="toctree-l4" href="#_3">形成更新对象和重新配置信道</a></li>
+            <li><a class="toctree-l4" href="#_3">形成更新对象和重新配置通道</a></li>
         
-            <li><a class="toctree-l4" href="#org3">将Org3加入信道</a></li>
+            <li><a class="toctree-l4" href="#org3">将Org3加入通道</a></li>
         
             <li><a class="toctree-l4" href="#_4">升级和调用</a></li>
         
@@ -305,8 +305,8 @@
 <p>本章的这些步骤在docker镜像<code>1.1.0-preview</code>版本(tag)和相关工具中已经验证过。确保你已经下载了适合的镜像版本和二进制包，或者你从比Fabric“1.1.0-preview”标签更新的分支上构建的二进制包。  </p>
 </blockquote>
 </blockquote>
-<p>本章是<a href="https://hyperledgercn.github.io/hyperledgerDocs/build_network_zh/">构建第一个fabric网络</a>的后续，会演示增加一个新组织<code>Org3</code>到自动生成的应用信道<code>mychannel</code>。它假定你已经对<a href="https://github.com/wbwangk/wbwangk.github.io/wiki/Hyperledger#%E5%90%AF%E5%8A%A8%E9%A6%96%E4%B8%AA%E7%BD%91%E7%BB%9Cfirst-network">BYFN</a>示范很懂了，包括会使用工具<code>cryptogen</code>和<code>configtxgen</code>。  </p>
-<p>这篇文章仅聚焦于集成一个新组织，然而用同样的方法可以更新其他信道配置（如更新修改规则、改变批大小等）。示范的操作是组织管理员职责，而不是链码或应用开发者职责。</p>
+<p>本章是<a href="https://hyperledgercn.github.io/hyperledgerDocs/build_network_zh/">构建第一个fabric网络</a>的后续，会演示增加一个新组织<code>Org3</code>到自动生成的应用通道<code>mychannel</code>。它假定你已经对<a href="https://github.com/wbwangk/wbwangk.github.io/wiki/Hyperledger#%E5%90%AF%E5%8A%A8%E9%A6%96%E4%B8%AA%E7%BD%91%E7%BB%9Cfirst-network">BYFN</a>示范很懂了，包括会使用工具<code>cryptogen</code>和<code>configtxgen</code>。  </p>
+<p>这篇文章仅聚焦于集成一个新组织，然而用同样的方法可以更新其他通道配置（如更新修改规则、改变批大小等）。示范的操作是组织管理员职责，而不是链码或应用开发者职责。</p>
 <blockquote>
 <p>注意</p>
 <blockquote>
@@ -340,7 +340,7 @@
 <pre><code class="bash">export FABRIC_CFG_PATH=$PWD &amp;&amp; ../../bin/configtxgen -printOrg Org3MSP &gt; ../channel-artifacts/org3.json
 </code></pre>
 
-<p>上面的命令会创建一个JSON文件<code>org3.json</code>，并把它输出到<code>first-network</code>目录的子目录<code>channel-artifacts</code>下面。这个文件包含了为Org3定义的修改策略，以及三个base64格式的重要证书：管理员用户证书、CA根证书和TLS根证书。在下面的步骤中，我们将附加这个JSON对象到信道配置中。  </p>
+<p>上面的命令会创建一个JSON文件<code>org3.json</code>，并把它输出到<code>first-network</code>目录的子目录<code>channel-artifacts</code>下面。这个文件包含了为Org3定义的修改策略，以及三个base64格式的重要证书：管理员用户证书、CA根证书和TLS根证书。在下面的步骤中，我们将附加这个JSON对象到通道配置中。  </p>
 <p>我们最后一项准备工作是将Orderer组织MSP材料搬移到Org3的<code>crypto-config</code>目录中。特别是，我们关注Orderer的TLS根证书，这将允许Org3实体和网络的orderer节点之间的安全通信。</p>
 <pre><code class="bash">cd ../ &amp;&amp; cp -r crypto-config/ordererOrganizations org3-artifacts/crypto-config/
 </code></pre>
@@ -388,27 +388,27 @@ configtxlator start &amp;
 <p>如果你重启了CLI容器，你需要重启REST服务器和重新导出三个环境变量<code>CONFIGTXLATOR_URL</code>、<code>ORDERER_CA</code>和<code>CHANNEL_NAME</code>。jq的安装会持久化，不用重新安装它。*</p>
 </blockquote>
 </blockquote>
-<h3 id="_3">形成更新对象和重新配置信道<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>现在我们在CLI容器中有了一个运行中的REST服务器，并且我们导出了两个关键环境变量<code>ORDERER_CA</code>和<code>CHANNEL_NAME</code>。让我们提取信道<code>mychannel</code>最新配置区块。</p>
+<h3 id="_3">形成更新对象和重新配置通道<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>现在我们在CLI容器中有了一个运行中的REST服务器，并且我们导出了两个关键环境变量<code>ORDERER_CA</code>和<code>CHANNEL_NAME</code>。让我们提取通道<code>mychannel</code>最新配置区块。</p>
 <pre><code class="bash">peer channel fetch config config_block.pb -o orderer.example.com:7050 -c $CHANNEL_NAME --tls --cafile $ORDERER_CA
 </code></pre>
 
-<p>上面的命令对生成的二进制protobuf格式信道配置块取了一个名称<code>config_block.pb</code>。请注意，你可以修改返回的protobuf和JSON对象的命名约定，但是你应该遵循一种方法，以便于进行简单直观的识别。  </p>
+<p>上面的命令对生成的二进制protobuf格式通道配置块取了一个名称<code>config_block.pb</code>。请注意，你可以修改返回的protobuf和JSON对象的命名约定，但是你应该遵循一种方法，以便于进行简单直观的识别。  </p>
 <p>当你发出<code>peer channel fetch</code>命令的时候，终端上会显示一些输出。日志中的最后一行很有趣：</p>
 <pre><code class="bash">2017-11-07 17:17:57.383 UTC [channelCmd] readBlock -&gt; DEBU 011 Received block: 2
 </code></pre>
 
-<p>这是告诉我们<code>mychannel</code>的最新配置区块是区块2，<strong>不是</strong>创世区块。默认情况下，<code>peer channel fetch config</code>命令返回目标信道的最新配置区块，在本例中是2号区块。当BYFN场景运行时，内嵌脚本执行了两个对信道的附加配置更新。也就是，通过两个信道更新交易定义了两个组织<code>Org1</code>和<code>Org2</code>的锚peer。象这样，我们有了如下配置序列：区块0，创世区块；区块1，Org1锚peer更新；区块2，Org2锚peer更新。  </p>
-<p>现在我们将使用<code>configtxlator</code>服务器将这个信道配置区块解码为人类可以读写的JSON格式。</p>
+<p>这是告诉我们<code>mychannel</code>的最新配置区块是区块2，<strong>不是</strong>初始区块。默认情况下，<code>peer channel fetch config</code>命令返回目标通道的最新配置区块，在本例中是2号区块。当BYFN场景运行时，内嵌脚本执行了两个对通道的附加配置更新。也就是，通过两个通道更新交易定义了两个组织<code>Org1</code>和<code>Org2</code>的锚peer。象这样，我们有了如下配置序列：区块0，初始区块；区块1，Org1锚peer更新；区块2，Org2锚peer更新。  </p>
+<p>现在我们将使用<code>configtxlator</code>服务器将这个通道配置区块解码为人类可以读写的JSON格式。</p>
 <pre><code class="bash">curl -X POST --data-binary @config_block.pb &quot;$CONFIGTXLATOR_URL/protolator/decode/common.Block&quot; | jq . &gt; config_block.json
 </code></pre>
 
-<p>我们将编码输出命名为<code>confg_block.json</code>。（再次，你可以使用自己的命名习惯来操作此步骤。）如果你在CLI容器发出<code>ls</code>命令，你可以看到两个对象：二进制protobuff格式的信道配置文件<code>config_block.pb</code>和JSON格式对象<code>config_block.json</code>。  </p>
+<p>我们将编码输出命名为<code>confg_block.json</code>。（再次，你可以使用自己的命名习惯来操作此步骤。）如果你在CLI容器发出<code>ls</code>命令，你可以看到两个对象：二进制protobuff格式的通道配置文件<code>config_block.pb</code>和JSON格式对象<code>config_block.json</code>。  </p>
 <p>现在我们需要确定<code>config_block.json</code>对象的范围，并去掉所有的封装包装。我们不关心标题、元数据、创建者签名等，但关心交易中的配置定义。我们通过<code>jq</code>工具实现这一点：</p>
 <pre><code class="bash">jq .data.data[0].payload.data.config config_block.json &gt; config.json
 </code></pre>
 
-<p>这给了我们一个修整过的JSON对象<code>config.json</code>，这是我们修改配置的基础。我们将再次使用<code>jq</code>工具将Org3配置定义<code>org3.json</code>附加到信道的应用组字段，并命名输出为<code>updated_config.json</code>。</p>
+<p>这给了我们一个修整过的JSON对象<code>config.json</code>，这是我们修改配置的基础。我们将再次使用<code>jq</code>工具将Org3配置定义<code>org3.json</code>附加到通道的应用组字段，并命名输出为<code>updated_config.json</code>。</p>
 <pre><code class="bash">jq -s '.[0] * {&quot;channel_group&quot;:{&quot;groups&quot;:{&quot;Application&quot;:{&quot;groups&quot;: {&quot;Org3MSP&quot;:.[1]}}}}}' config.json ./channel-artifacts/org3.json &gt;&amp; updated_config.json
 </code></pre>
 
@@ -425,8 +425,8 @@ configtxlator start &amp;
 <pre><code class="bash">curl -X POST -F channel=$CHANNEL_NAME -F &quot;original=@config.pb&quot; -F &quot;updated=@updated_config.pb&quot; &quot;${CONFIGTXLATOR_URL}/configtxlator/compute/update-from-configs&quot; &gt; org3_update.pb
 </code></pre>
 
-<p>这个新proto<code>org3_update.pb</code>包含了Org3定义和指向Org1和Org2材料的高级指针。我们能够放弃大量的Org1和Org2的MSP材料和修改策略信息，因为这些数据已经存在于信道的创世区块中。因此，我们只需要两个配置的增量信息。  </p>
-<p>在递交信道更新前，我们需要执行几个最后的步骤。首先，让我们解码这个对象到可编辑的JSON格式<code>org3_update.json</code>:</p>
+<p>这个新proto<code>org3_update.pb</code>包含了Org3定义和指向Org1和Org2材料的高级指针。我们能够放弃大量的Org1和Org2的MSP材料和修改策略信息，因为这些数据已经存在于通道的初始区块中。因此，我们只需要两个配置的增量信息。  </p>
+<p>在递交通道更新前，我们需要执行几个最后的步骤。首先，让我们解码这个对象到可编辑的JSON格式<code>org3_update.json</code>:</p>
 <pre><code class="bash">curl -X POST --data-binary @org3_update.pb &quot;$CONFIGTXLATOR_URL/protolator/decode/common.ConfigUpdate&quot; | jq . &gt; org3_update.json
 </code></pre>
 
@@ -438,7 +438,7 @@ configtxlator start &amp;
 <pre><code class="bash">curl -X POST --data-binary @org3_update_in_envelope.json &quot;$CONFIGTXLATOR_URL/protolator/encode/common.Envelope&quot; &gt; org3_update_in_envelope.pb
 </code></pre>
 
-<p>几乎完成！我们现在的CLI容器中有了一个protobuf二进制文件<code>org3_update_in_envelope.pb</code>，然而在可以成功递交这个更新前，我们需要必要的Admin用户签名。我们信道的更新策略(mod_policy)被设置成默认的“MAJORITY”(多数)，这意味着我们需要来自两个初始组织Org1和Org2的管理员签署这个更新。如果我们没有获得这两个签名，则排序服务会因无法满足策略而拒绝这个交易。首先，我们用Org1的Admin签署这个更新proto。记住CLI容器是用Org1 MSP材料引导的，所以我们只需要简单地发送<code>peer channel signconfigtx</code>命令：</p>
+<p>几乎完成！我们现在的CLI容器中有了一个protobuf二进制文件<code>org3_update_in_envelope.pb</code>，然而在可以成功递交这个更新前，我们需要必要的Admin用户签名。我们通道的更新策略(mod_policy)被设置成默认的“MAJORITY”(多数)，这意味着我们需要来自两个初始组织Org1和Org2的管理员签署这个更新。如果我们没有获得这两个签名，则排序服务会因无法满足策略而拒绝这个交易。首先，我们用Org1的Admin签署这个更新proto。记住CLI容器是用Org1 MSP材料引导的，所以我们只需要简单地发送<code>peer channel signconfigtx</code>命令：</p>
 <pre><code class="bash">peer channel signconfigtx -f org3_update_in_envelope.pb
 </code></pre>
 
@@ -472,18 +472,18 @@ export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
 <pre><code class="bash">2017-11-07 21:50:17.435 UTC [msp/identity] Sign -&gt; DEBU 00f Sign: digest: 3207B24E40DE2FAB87A2E42BC004FEAA1E6FDCA42977CB78C64F05A88E556ABA
 </code></pre>
 
-<p>成功的信道更新呼叫返回了一个新的区块，区块5，到信道中的所有peer。区块0-2是初始信道配置，区块3-4是实例化和对链码<code>mycc</code>的调用。同样的，区块5作为最新的信道配置将Org3定义到了信道上。  </p>
+<p>成功的通道更新呼叫返回了一个新的区块，区块5，到通道中的所有peer。区块0-2是初始通道配置，区块3-4是实例化和对链码<code>mycc</code>的调用。同样的，区块5作为最新的通道配置将Org3定义到了通道上。  </p>
 <p>查看容器<code>peer0.org1.example.com</code>的日志：</p>
 <pre><code class="bash">docker logs -f peer0.org1.example.com
 </code></pre>
 
-<p>你看到的详细输出反应了确认检查和对peer状态数据库的更新(关于信道的当前配置)。你还可以看到我们配置交易的提交：</p>
+<p>你看到的详细输出反应了确认检查和对peer状态数据库的更新(关于通道的当前配置)。你还可以看到我们配置交易的提交：</p>
 <pre><code class="bash">2017-11-15 15:41:05.000 UTC [kvledger] CommitWithPvtData -&gt; DEBU 774 Channel [mychannel]: Committing block [5] to storage
 </code></pre>
 
 <p>如果您想查看新配置区块的内容，请按照演示过程获取并解码新配置区块。让我们继续&hellip;  </p>
-<h3 id="org3">将Org3加入信道<a class="headerlink" href="#org3" title="Permanent link">&para;</a></h3>
-<p>在这时，信道配置已经更新到包含了我们的新组织<code>Org3</code>，这意味着此成员的peer可以成功加入这个信道。  </p>
+<h3 id="org3">将Org3加入通道<a class="headerlink" href="#org3" title="Permanent link">&para;</a></h3>
+<p>在这时，通道配置已经更新到包含了我们的新组织<code>Org3</code>，这意味着此成员的peer可以成功加入这个通道。  </p>
 <p>首先，让我们启动包含Org3 peer和Org3特定CLI的容器。从<code>first-network</code>目录启动Org3 docker compose：</p>
 <pre><code class="bash">docker-compose -f docker-compose-org3.yaml up -d
 </code></pre>
@@ -500,7 +500,7 @@ export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
 <pre><code class="bash">echo $ORDERER_CA &amp;&amp; echo $CHANNEL_NAME
 </code></pre>
 
-<p>现在让我们发送呼叫到排序服务，请求<code>mychannel</code>的创世区块。由于我们成功的信道更新，订购服务可以验证附加到此呼叫的签名。如果Org3尚未成功添加到信道配置中，则排序服务会拒绝此请求。  </p>
+<p>现在让我们发送呼叫到排序服务，请求<code>mychannel</code>的初始区块。由于我们成功的通道更新，订购服务可以验证附加到此呼叫的签名。如果Org3尚未成功添加到通道配置中，则排序服务会拒绝此请求。  </p>
 <blockquote>
 <p>注意</p>
 <blockquote>
@@ -511,8 +511,8 @@ export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
 <pre><code class="bash">peer channel fetch 0 mychannel.block -o orderer.example.com:7050 -c $CHANNEL_NAME --tls --cafile $ORDERER_CA
 </code></pre>
 
-<p>注意，我们发送了一个<code>0</code>来指定我们要获取的信道账本上的第一个区块（即创世区块）。如果我们简单地发送<code>peer channel fetch config</code>命令，则我们会接收到区块5，即定义Org3的更新配置。然而，我们不能在一个下游区块开始账本，反而需要加入区块0。  </p>
-<p>发送<code>peer channel join</code>命令，并传入创世区块<code>mychannel.block</code>：</p>
+<p>注意，我们发送了一个<code>0</code>来指定我们要获取的通道账本上的第一个区块（即初始区块）。如果我们简单地发送<code>peer channel fetch config</code>命令，则我们会接收到区块5，即定义Org3的更新配置。然而，我们不能在一个下游区块开始账本，反而需要加入区块0。  </p>
+<p>发送<code>peer channel join</code>命令，并传入初始区块<code>mychannel.block</code>：</p>
 <pre><code class="bash">peer channel join -b mychannel.block
 </code></pre>
 
@@ -527,7 +527,7 @@ peer channel join -b mychannel.block
 </code></pre>
 
 <p>如果你想在Org3的第二个peer上安装链码，修改相应环境变量和重新发送命令。请注意，第二个安装不是强制的，因为您只需要在背书peer或以其他方式与账本接口的peer（即仅查询）上安装链接代码。这种peer上将仍然运行确认逻辑和作为提交者，但没有运行链码的容器。  </p>
-<p>现在跳回到原始CLI容器，并在Org1和Org2 peer上安装新版本链码。我们是用Org2管理员身份递交的信道更新呼叫，所以容器仍以<code>peer0.org2</code>的身份运行：</p>
+<p>现在跳回到原始CLI容器，并在Org1和Org2 peer上安装新版本链码。我们是用Org2管理员身份递交的通道更新呼叫，所以容器仍以<code>peer0.org2</code>的身份运行：</p>
 <pre><code class="bash">peer chaincode install -n mycc -v 2.0 -p github.com/chaincode/chaincode_example02/go/
 </code></pre>
 
@@ -542,11 +542,11 @@ export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
 <pre><code class="bash">peer chaincode install -n mycc -v 2.0 -p github.com/chaincode/chaincode_example02/go/
 </code></pre>
 
-<p>现在，我们准备好升级链码。这里没有修改底层源码，我们只是简单地把Org3加入到信道<code>mychannel</code>的链码<code>mycc</code>的背书策略。  </p>
+<p>现在，我们准备好升级链码。这里没有修改底层源码，我们只是简单地把Org3加入到通道<code>mychannel</code>的链码<code>mycc</code>的背书策略。  </p>
 <blockquote>
 <p>注意</p>
 <blockquote>
-<p>任何满足链码实例化策略的身份都可以发出升级呼叫。在默认情况下，这些身份是信道管理员。  </p>
+<p>任何满足链码实例化策略的身份都可以发出升级呼叫。在默认情况下，这些身份是通道管理员。  </p>
 </blockquote>
 </blockquote>
 <p>发送呼叫：</p>
@@ -554,7 +554,7 @@ export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
 </code></pre>
 
 <p>你可以看到在上面的命令中，我们通过<code>v</code>标志指定了新版本。你还可以看到背书策略被更新到<code>-P "OR ('Org1MSP.member','Org2MSP.member','Org3MSP.member')"</code>，准确地反映了策略增加了Org3。（上述背书策略的含义是三个组织的任何一个签名都可以。）令人感兴趣的最后一项是我们用<code>c</code>标志指定的构造函数请求。与实例化调用一样，链式代码升级需要使用<code>init</code>方法。如果你的链码需要传参数进<code>init</code>方法，那么你需要提供适当的键值对来重新初始化状态。这不是推荐的做法，因为升级提交者可以任意改写世界状态。相反，请考虑编辑源代码以删除参数依赖项，或者从实例化时不需要参数的链码开始。  </p>
-<p>升级呼叫将增加一个新的区块（区块6）到信道账本，并允许Org3 peer在背书阶段执行交易。跳回到Org3 CLI容器，并发出一个对<code>a</code>值的查询。这将需要一些时间，因为链码镜像需要为目标peer构建，并且容器需要启动：</p>
+<p>升级呼叫将增加一个新的区块（区块6）到通道账本，并允许Org3 peer在背书阶段执行交易。跳回到Org3 CLI容器，并发出一个对<code>a</code>值的查询。这将需要一些时间，因为链码镜像需要为目标peer构建，并且容器需要启动：</p>
 <pre><code class="bash">peer chaincode query -C $CHANNEL_NAME -n mycc -c '{&quot;Args&quot;:[&quot;query&quot;,&quot;a&quot;]}'
 </code></pre>
 
@@ -569,7 +569,7 @@ export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
 
 <p>你会看到一个响应：<code>Query Result: 80</code>，这准确反映了这个链码的世界状态的改变。  </p>
 <h3 id="_5">总结<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p>重新配置过程的确涉及很多，但是各个步骤都有一个合理的方法。最终目标是形成以protobuf二进制格式表示的增量交易对象，然后收集必要数量的管理员签名，使得重新配置交易处理完成信道的修改策略。<code>configtxlator</code>和<code>jq</code>工具，与日益增长<code>peer channel</code>命令一起，为我们提供了完成这项任务所需的功能。</p>
+<p>重新配置过程的确涉及很多，但是各个步骤都有一个合理的方法。最终目标是形成以protobuf二进制格式表示的增量交易对象，然后收集必要数量的管理员签名，使得重新配置交易处理完成通道的修改策略。<code>configtxlator</code>和<code>jq</code>工具，与日益增长<code>peer channel</code>命令一起，为我们提供了完成这项任务所需的功能。</p>
               
             </div>
           </div>
