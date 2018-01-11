@@ -3,24 +3,17 @@
 | --- | --- | --- |
 | [原文](http://hyperledger-fabric.readthedocs.io/en/latest/endorsement-policies.html) | Linsheng Yu |  |
 
+背书策略用于指示peer怎样确定一个交易是否被正确背书。作为交易确认的一部分，当peer接收一个交易后，就会调用与交易链码关联的VSCC（确认系统链码）来确定交易的有效性。回想一下，一个交易包含一个或多个来自背书节点的背书。VSCC任务做了下列背书校验：
 
-Endorsement policies are used to instruct a peer on how to decide whether a transaction is properly endorsed. When a peer receives a transaction, it invokes the VSCC (Validation System Chaincode) associated with the transaction’s Chaincode as part of the transaction validation flow to determine the validity of the transaction. Recall that a transaction contains one or more endorsement from as many endorsing peers. VSCC is tasked to make the following determinations: 
+- 所有的背书是有效的（即在预期的消息上用有效证书做了有效签名）
 
-- all endorsements are valid (i.e. they are valid signatures from valid certificates over the expected message) 
-- there is an appropriate number of endorsements 
-- endorsements come from the expected source(s)
+- 恰当的（满足要求的）背书数量
 
-节点通过背书策略来确定一个交易是否被正确背书。当一个peer接收一个交易后，就会调用与该交易Chaincode相关的VSCC（Chaincode 实例化时指定的）作为交易验证流程的一部分（还有RW版本验证）来确定交易的有效性。为此，一个交易包含一个或多个来自背书节点的背书。VSCC的背书校验包括：
+- 背书来自预期的源
 
-* 所有的背书是有效的（即，有效证书做的有效签名）
-* 恰当的（满足要求的）背书数量
-* 背书来自预期的背书节点
+背书策略就是一个确定上边的第二和第三点的方式。
 
-Endorsement policies are a way of specifying the second and third points.
-
-背书策略就是用来定义上边的第二和第三点。
-
-## Endorsement policy design - 背书策略设计
+## 背书策略设计
 
 Endorsement policies have two main components: 
 
@@ -33,8 +26,13 @@ A threshold gate `T` takes two inputs: an integer `t` (the threshold) and a list
 
 背书策略有两个主要组成部分：
 
-* 主体（principal）：`P` 定义了期望的签名来源实体
-* 门阀阈值（threshold gate）：`T` 有两个参数：整数`t`（阈值）和`n`个主体，表示从这`n`个主体中获取`t`个签名
+- 一个主体（principal）
+
+- 一个阈值
+
+一个主体`P`标识了期望的签名来源实体。
+
+一个阈值`T` 有两个输入：整数`t`（阈值）和`n`个主体，表示从这`n`个主体中获取`t`个签名
 
 For example: - `T(2, 'A', 'B', 'C')` requests a signature from any 2 principals out of `A`, `B` or `C`; - `T(1, 'A', T(2, 'B', 'C'))` requests either one signature from principal `A` or 1 signature from `B` and `C` each.
 
