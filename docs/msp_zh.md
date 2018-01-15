@@ -1,287 +1,110 @@
+## 成员服务提供者(MSP)
+[原文](http://hyperledger-fabric.readthedocs.io/en/latest/msp.html)  
+本文提供了有关MSP的设置和最佳实践的详细信息。
 
-| 原文 | 作者 | 审核修正 |
-| --- | --- | --- |
-| [原文](http://hyperledger-fabric.readthedocs.io/en/latest/msp.html) | Dinghao Liu | Yunxiao Wang, Bei Wang |
+成员服务提供商（MSP）是一个旨在提供成员维护体系结构抽象的组件。
 
-# 成员服务提供者 （MSP）
+特别是，MSP将发布和验证证书背后的所有密码学机制和协议以及用户认证抽象出来。MSP可以定义他们自己的身份概念，以及这些身份管理（身份验证）和认证（签名生成和验证）的规则。
 
-The document serves to provide details on the setup and best practices for MSPs.
+Hyperledger Fabric区块链网络可以由一个或多个MSP管理。这提供了成员资格维护的模块化，以及跨不同成员标准和体系结构的互操作性。
 
-本文提供MSP的设置细节，致力于打造MSP的最佳实践。
+在本文的其余部分中，我们将详细介绍由Hyperledger Fabric支持的MSP实现的设置，并讨论关于其使用的最佳实践。
 
-Membership service provider (MSP) is a component that aims to offer an abstraction of a membership operation architecture.
+### MSP配置
+要创建一个MSP实例，需要在每个peer和orderer的本地指定其配置。
 
-成员服务提供者（MSP）是一个提供抽象化成员操作框架的组件。
+对于每个MSP，为了在网络中引用它，首先需要确定一个名称（如msp1，org2和org3.divA）。这是一个名称，通过名称一个MSP的成员规则可以表现为一个联盟、组织或组织单元(OU)在通道中被引用。这还被描述为MSP身份或MSP ID。MSP身份在每个MSP实例中必须唯一的。例如，如果两个MSP的实例具有相同的身份在系统通道创世区块中被检测到，oderer的建立会失败。
 
-In particular, MSP abstracts away all cryptographic mechanisms and protocols behind issuing and validating certificates, and user authentication. An MSP may define their own notion of identity, and the rules by which those identities are governed (identity validation) and authenticated (signature generation and verification).
+MSP的默认实现中，需要指定一组用于身份(证书)验证和签名验证的参数。这些参数在[RFC5280](http://www.ietf.org/rfc/rfc5280.txt)中描述。包括：
+- 一个自签名(X.509)证书列表，构成了*信任根(root of trust)*  
+- 一个表示中间CA的X.509证书列表；这些这证书应当被*信任根*的某个证书所证明(签署)；中间CA是可选参数  
+- 一个X.509证书列表，证书验证路径应正确地指向某个信任根证书，它代表MSP的管理员；这些证书的拥有者被授权可以请求变更这个MSP的配置（如根CA、中间CA）  
+- 一个组织单元(OU)列表，它们是应该被包含在X.509证书中这个MSP的有效成员；这是一个可选配置参数，例如可用于，多个组织利用同一个信任根或中间CA，它们为成员保留了一个OU字段。  
+- 一个撤销证书(CRL)列表，每个对应了一个MSP CA(根或中间证书)；这是一个可选参数   
+- 一个自签名证书(X.509)列表，组成TLS证书的信任根  
+- 一个代表中间TLS CA的X.509证书列表；这些证书应当被TLS信任根的某个证书证明；中间CA是一个可选参数。    
 
-特别地，MSP将颁发与校验证书，以及用户认证背后的所有密码学机制与协议都抽象了出来。一个MSP可以自己定义身份，以及身份的管理（身份验证）与认证（生成与验证签名）规则。
+对于这个MSP实例的有效身份需要满足以下条件：
+- 它们是X.509格式证书，带来一个可验证证书路径到某个信任根证书；  
+- 它们没有包含在任何CRL中；  
+- 它们的X.509证书结构的`OU`字段被定义在MSP配置文件的组织单元中.  
 
-A Hyperledger Fabric blockchain network can be governed by one or more MSPs. This provides modularity of membership operations, and interoperability across different membership standards and architectures.
+更多对于当前MSP实现的身份验证信息，请参阅[MSP身份有效性规则](http://hyperledger-fabric.readthedocs.io/en/latest/msp-identity-validity-rules.html)。  
 
-一个Hyperledger Fabric区块链网络可以被一个或多个MSP管理。这提供了模块化的成员操作，以及兼容不同成员标准与架构的互操作性。
+除了与验证相关的参数之外，为了使MSP能够将其实例化的节点签名或认证，需要指定：
+- 用于节点签名的签名key(当前仅支持ECDSA key)  
+- 节点的X.509证书，这在MSP的验证参数中是一个有效身份  
 
-In the rest of this document we elaborate on the setup of the MSP implementation supported by Hyperledger Fabric, and discuss best practices concerning its use.
+需要注意的重要一点是，MSP身份永不过期；你只能通过将身份加入CRL来取消它。另外，当前不支持TLS证书的强制撤回。  
 
-接下来我们将详细说明在Hyperledger Fabric支持下的MSP的实现步骤，并讨论其使用方面的最佳实践方式。
+### 怎样生成MSP证书和密钥?
+生成X.509证书以提供给MSP配置，应用可以使用[Openssl](https://www.openssl.org/)。我们需要强调的是Hyperledger Fabric不支持RSA密钥证书。  
+另一个选择是使用`cryptogen`工具，它的操作已经在[快速开始](http://hyperledger-fabric.readthedocs.io/en/latest/getting_started.html)中解释过。  
+[Hyperledger Fabric CA](http://hyperledger-fabric-ca.readthedocs.io/en/latest/)也可以生成配置MSP需要的密钥和证书。  
 
-##MSP配置
+### 在peer&oderer端建立MSP
+为peer或oderer建立一个本地MSP，管理员需要创建一个文件夹(如`$MY_PATH/mspconfig`)，下面包含6个子文件夹和一个文件：  
+1. 一个`admincerts`文件夹，包含几个PEM文件，每个文件对应一个管理员证书  
+2. 一个`cacerts`文件夹，包含几个PEM文件，每个文件对应到一个根CA证书
+3. (可选)一个`intermediatecerts`文件夹，包含几个PEM文件，每个文件对应一个中间CA证书  
+4. (可选)一个`config.yaml`文件，包含所考虑的OU的信息；OU信息被定义在一个叫`OrganizationalUnitIdentifiers`的yaml数组条目下的键值对(`<Certificate, OrganizationalUnitIdentifier>`)，这里`Certificate`是CA证书的相对路径(根或中间)，用来证明这个组织单元成员(如`. ./cacerts/cacert.pem`)，而`OrganizationalUnitIdentifier`表示出现在X.509证书中的OU字段(例如"COP")  
+5. (可选)一个`crls`文件夹，包含了撤销证书列表(CRL)  
+6. 一个`keystore`文件夹，包含一个PEM文件，是节点的签名密钥；再次强调，不支持RSA密钥  
+7. 一个`signcerts`文件夹，包含一个PEM文件，是节点的X.509证书  
+8. (可选)一个`tlscacerts`文件夹，包含几个PEM文件，每个对应到一个TLS根CA证书  
+9. (可选)一个`tlsintermediatecerts`文件夹，包含几个PEM文件，每个对应一个中间TLS CA证书   
 
-To setup an instance of the MSP, its configuration needs to be specified locally at each peer and orderer (to enable peer, and orderer signing), and on the channels to enable peer, orderer, client identity validation, and respective signature verification (authentication) by and for all channel members.
+在节点的配置文件中(对peer是core.yaml，对orderer是orderer.yaml)，需要指定到mspconfig文件夹的路径，和节点MSP的身份(Id)。到msconfig的路径是相对于`FABRIC_CFG_PATH`，对于peer由参数`mspConfigPath`的值定义，对于orderer由参数`LocalMSPDir`值定义。节点MSP的身份，对于peer由参数`localMspId`的值定义，对于orderer由参数`LocalMSPID`的值定义。  
+这些变量可以被环境变量覆盖，对于peer节点由前缀为CORE的环境变量覆盖(如CORE_PEER_LOCALMSPID)，对于orderer节点由前缀为ORDERER的环境变量覆盖(如ORDERER_GENERAL_LOCALMSPID)。  
+注意，对于建立orderer，需要生成和提供系统通道的创世区块(genesis block)到orderer节点。MSP配置对这个区块的需求在下一节讲到。  
+重新配置一个“本地”MSP只能手工进行，需要peer和orderer进程重启。在后续版本中，我们的目标是提供在线/动态重新配置（即使用一个用节点管理系统链码来避免停止节点）。
 
-要想初始化一个MSP实例，每一个peer节点和orderer节点都需要在本地指定其配置，并在channel上启用peer节点、orderer节点及client的身份的验证与各自的签名验证。注意channel上的全体成员均参与此过程。
+### 通道MSP建立
+在创建系统时，需要指定出现在网络中的所有MSP的验证参数，并且包括在系统通道的创世区块中。回想一下前文讲到的组成MSP身份的MSP验证参数，信任证书的根、中间CA和管理员证书，还有OU规范和CRL。系统创世区块被提供给orderer（在orderer的创建阶段），允许它们认证通道创建请求。如果区块包括两个相同身份的MSP，oderer会拒绝，使网络自举失败。  
+对于应用通道，通道的创世区块包含了管理通道的MSP验证组件。我们强调这是**应用的责任**：确保在指示其一个或多个peer加入通道之前，通道的创世区块(或最新的配置区块)中包含了正确的MSP配置信息。  
+在使用`configtxgen`工具启动一个通道时，需要配置通道MSP，办法是将MSP的验证参数包含在`mspconfig`文件夹，有在`configtx.yaml`的相应章节设置文件夹路径。  
+重新配置通道的MSP，包括MSP的CA更新CRL公告，通过MSP的管理员证书之一的所有者创建`config_update`对象来实现。管理员管理的客户端应用会将这个更新广播到MSP出现的通道中。  
 
-Firstly, for each MSP a name needs to be specified in order to reference that MSP in the network (e.g. `msp1`, `org2`, and `org3.divA`). This is the name under which membership rules of an MSP representing a consortium, organization or organization division is to be referenced in a channel. This is also referred to as the MSP Identifier or MSP ID. MSP Identifiers are required to be unique per MSP instance. For example, shall two MSP instances with the same identifier be detected at the system channel genesis, orderer setup will fail.
+### 最佳实践
+在本节中，我们将详细介绍在常见情况下MSP配置的最佳实践。  
 
-首先， 为了方便地在网络中引用MSP，每个MSP都需要一个特定的名字（例如`msp1`、`org2`、`org3.divA`）。在一个channel中，当MSP的成员管理规则表示一个团体，组织或组织分工时，该名称会被引用。这又被成为MSP标识符或MSP ID。对于每个MSP实例，MSP标识符都必须独一无二。举个例子：系统channel创建时如果检测到两个MSP有相同的标识符，那么orderer节点的启动将以失败告终。
+#### 1)组织/公司和MSP之间的映射
 
-In the case of default implementation of MSP, a set of parameters need to be specified to allow for identity (certificate) validation and signature verification. These parameters are deduced by **RFC5280**, and include:
+我们建议组织和MSP之间有一对一的映射。如果选择不同的映射类型的映射，则需要考虑以下内容：
 
-在MSP的默认情况下，身份（证书）验证与签名验证需要指定一组参数。这些参数推导自**RFC5280**，具体包括：
+- **一个组织采用多个MSP**。这对应于一个组织包含多个部门的情况，每个部门对应自己的MSP，无论出于管理独立性原因或出于隐私原因。在这种情况下，一个peer只能由一个MSP拥有，并且不会将来自其他MSP的身份的peer识别为同一组织的peer。其含义是，peer可以与属于同一个分支的peer分享数据，而不是与组织的全部peer分享数据。  
+- **多个组织使用单个MSP**。这对应于具有相似成员管理架构的多组织联盟的情况。这里需要知道的是，peer将组织范围的消息传播给具有同一MSP下的peer，而不管他们是否属于相同的实际组织。这是MSP定义和/或peer配置粒度的限制。
 
-* A list of self-signed (X.509) certificates to constitute the root of trust
+#### 2)一个组织有不同的部门（又叫组织单元）， 希望授予他们对不同通道的访问权限。
+有两种方式处理这个情况：
 
-    * 一个自签名的证书列表（满足X.509标准）以构成信任源
+- **定义一个MSP来容纳所有组织成员的成员资格**。该MSP的配置将包括根CA，中间CA和管理员证书的列表; 成员身份id将包括成员所属的组织单位(`OU`)。然后可以定义策略来捕获具体的成员OU，这些策略可以构成通道的读/写策略或链码的背书策略。这种方法的一个局限性是，gossip peer会把本地MSP下的成员身份同行视为同一组织的成员，并因此会与它们频繁gossip组织范围的数据（例如他们的状态）。  
+- **定义一个MSP来代表每个部门**。这将导致为每个部门指定根CA，中间CA和管理员证书的一组证书，从而不存在跨MSP的证书路径。这意味着，例如，每个部门都需要建立独立的中间CA。这里的缺点是管理多个MSP而不是一个，但是这样规避了以前方法中存在的问题。也可以通过利用MSP配置的OU扩展来为每个部门定义一个MSP。
+#### 3)将客户端与同一组织的peer分开。
 
-* A list of X.509 certificates to represent intermediate CAs this provider considers for certificate validation; these certificates ought to be certified by exactly one of the certificates in the root of trust; intermediate CAs are optional parameters
+在许多情况下，要求身份的“类型”可以从身份本身中获取（例如，可能需要背书保证由peer获得，而不是客户端或者仅作为orderer的节点）。
 
-    * 一个用于表示该MSP验证过的中间CA的X.509的证书列表，用于证书的校验。这些证书应该被信任源的一个证书所认证；中间的CA则是可选参数
+对这些需求的支持有限。
 
-* A list of X.509 certificates with a verifiable certificate path to exactly one of the certificates of the root of trust to represent the administrators of this MSP; owners of these certificates are authorized to request changes to this MSP configuration (e.g. root CAs, intermediate CAs)
+一种分开的方法是为每种节点类型创建单独的中间CA--一个用于客户端，另一个用于peer/orderer; 并配置两个不同的MSP - 一个用于客户端，另一个用于peer/orderer。这个组织应该访问的通道将需要包括两个MSP，而背书策略将只使用指向peer的MSP。这最终会导致组织被映射到两个MSP实例，并且会对peer和客户端的交互方式产生一定的影响。
 
-    * 一个具有可验证路径的X.509证书列表（该路径通往信任源的一个证书），以表示该MSP的管理员。这些证书的所有者对MSP配置的更改要求都是经过授权的（例如根CA，中间CA）
+由于同一组织的所有peer仍然属于一个MSP，所以gossip不会受到严重的影响。peer可以将某些系统链码的执行限制在本地基于MSP的策略中。例如，如果请求由本地MSP（只能是客户端）的管理员签名（最终用户应该位于请求的起源处），那么peer只会执行“joinChannel”请求。如果我们接受作为peer/ordererMSP成员的唯一客户将是该MSP的管理员，我们可以绕过这种不一致。
 
-* A list of Organizational Units that valid members of this MSP should include in their X.509 certificate; this is an optional configuration parameter, used when, e.g., multiple organisations leverage the same root of trust, and intermediate CAs, and have reserved an OU field for their members
+这种方法要考虑的另一点是，peer根据其本地MSP中请求发起者的成员资格来授权事件注册请求。显然，由于请求的发起者是一个客户端，所以请求始发者总是肯定与所请求的peer属于不同的MSP，并且peer将拒绝该请求。
 
-    * 一个组织单元列表，该MSP的合法成员应该将其包含进他们的X.509证书。这是一个可选的配置参数，举个例子：当多个组织使用相同信任源、中间CA以及组织为他们的成员保留了一个OU区的时候，会配置此参数
+#### 4)管理员和CA证书。
 
-* A list of certificate revocation lists (CRLs) each corresponding to exactly one of the listed (intermediate or root) MSP Certificate Authorities; this is an optional parameter
+将MSP管理员证书设置为与MSP根信任或中间CA的任何证书不同是非常重要的。将成员身份组件的管理职责与颁发新证书和(或)验证现有证书的职责分开，是常见（安全）做法。
 
-    * 一个证书吊销列表（CRLs）的清单，清单的每一项对应于一个已登记的（中间的或根）MSP证书颁发机构（CA），这是一个可选的参数
+#### 5)将中间CA列入黑名单。
 
-* A list of self-signed (X.509) certificates to constitute the *TLS root of trust* for TLS certificate.
+如前所述，通过重新配置机制来实现MSP的重新配置（对本地MSP实例的手动重新配置，及通过对通道的MSP实例构建适当的`config_update`消息）。显然，有两种方法可以确保在MSP中考虑的中间CA不再用于MSP的身份验证：
 
-    * 一个自签名的证书列表（满足X.509标准）以构成TLS信任源，服务于TLS证书
+1. 将MSP重新配置，在可信中间CA证书列表中的删除某些中间证书。对于本地配置的MSP，这意味着该CA的证书将从该`intermediatecerts`文件夹中删除。  
+2. 重新配置MSP，包含一个由信任根产生的CRL，该CRL包含提到的中间CA的证书。  
 
-* A list of X.509 certificates to represent intermediate TLS CAs this provider considers; these certificates ought to be certified by exactly one of the certificates in the TLS root of trust; intermediate CAs are optional parameters.
+在当前的MSP实现中，我们只支持方法(1)，因为它更简单，不需要将不再考虑的中间CA列入黑名单。
 
-    * 一个表示该provider关注的中间TLS CA的X.509证书列表。这些证书应该被TLS信任源的一个证书所认证；中间的CA则是可选参数
+#### 6)CA和TLS CA
 
-*Valid* identities for this MSP instance are required to satisfy the following conditions:
-
-对于该MSP实例，*有效的*身份应符合以下条件：
-
-* They are in the form of X.509 certificates with a verifiable certificate path to exactly one of the root of trust certificates
-
-    * 它们应符合X.509证书标准，且具有一条可验证的路径（该路径通往信任源的一个证书）
-
-* They are not included in any CRL
-
-    * 它们没有包含在任何CRL中
-
-* And they list one or more of the Organizational Units of the MSP configuration in the OU field of their X.509 certificate structure.
-
-    * 它们列出了一个或多个MSP配置的组织单元（列出的位置是它们X.509证书结构的OU区内）。
-
-For more information on the validity of identities in the current MSP implementation we refer the reader to **MSP Identity Validity Rules**.
-
-关于当前MSP实现过程中身份验证的更多信息，我们隆重推荐各位读者阅读[**MSP Identity Validity Rules**](http://hyperledger-fabric.readthedocs.io/en/latest/msp-identity-validity-rules.html)。
-
-In addition to verification related parameters, for the MSP to enable the node on which it is instantiated to sign or authenticate, one needs to specify:
-
-除了验证相关参数外，为了使MSP可以对已实例化的节点进行签名或认证，需要指定： 
-
-* The signing key used for signing by the node (currently only ECDSA keys are supported), and
-
-    * 用于节点签名的签名密钥（目前只支持ECDSA密钥）
-
-* The node’s X.509 certificate, that is a valid identity under the verification parameters of this MSP
-
-    * 节点的X.509证书，对MSP验证参数机制而言是一个有效的身份
-
-It is important to note that MSP identities never expire; they can only be revoked by adding them to the appropriate CRLs. Additionally, there is currently no support for enforcing revocation of TLS certificates.
-
-值得注意的是，MSP身份永远不会过期；它们只能通过添加到合适的CRL上来被撤销。此外，现阶段不支持吊销TLS证书。
-
-##如何生成MSP证书及其签名密钥？
-
-To generate X.509 certificates to feed its MSP configuration, the application can use [**Openssl**](https://www.openssl.org/). We emphasise that in Hyperledger Fabric there is no support for certificates including RSA keys.
-
-要想生成X.509证书以满足MSP配置，应用程序可以使用[**Openssl**](https://www.openssl.org/)。我们必须强调：在Hyperledger Fabric中，不支持包括RSA密钥在内的证书。
-
-Alternatively one can use `cryptogen` tool, whose operation is explained in **Getting Started**.
-
-另一个选择是使用`cryptogen`工具，其操作方法详见**快速入门**章节。
-
-**Hyperledger Fabric CA** can also be used to generate the keys and certificates needed to configure an MSP.
-
-**Hyperledger Fabric CA**也可用于生成配置MSP所需的密钥及证书。
-
-## peer&orderer侧 MSP 的设置
-
-To set up a local MSP (for either a peer or an orderer), the administrator should create a folder (e.g. `$MY_PATH/mspconfig`) that contains six subfolders and a file:
-
-要想（为peer节点或orderer节点）建立本地MSP，管理员应创建一个文件夹（如`$MY_PATH/mspconfig`）并在其下包含6个子文件夹与一个文件：
-
-* a folder `admincerts` to include PEM files each corresponding to an administrator certificate
-
-    * 文件夹`admincerts`包含如下PEM文件：每个PEM文件对应于一个管理员证书
-
-* a folder `cacerts` to include PEM files each corresponding to a root CA’s certificate
-
-    * 文件夹`cacerts`包含如下PEM文件：每个PEM文件对应于一个根CA的证书
-
-* (optional) a folder `intermediatecerts` to include PEM files each corresponding to an intermediate CA’s certificate
-
-    * （可选）文件夹`intermediatecerts`包含如下PEM文件：每个PEM文件对应于一个中间CA的证书
-
-* (optional) a file `config.yaml` to include information on the considered OUs; the latter are defined as pairs of `<Certificate,OrganizationalUnitIdentifier>` entries of a yaml array called `OrganizationalUnitIdentifiers`, where `Certificate` represents the relative path to the certificate of the certificate authority (root or intermediate) that should be considered for certifying members of this organizational unit (e.g. ./cacerts/cacert.pem), and `OrganizationalUnitIdentifier` represents the actual string as expected to appear in X.509 certificate OU-field (e.g. “COP”) 
-
-    * （可选）文件`config.yaml`包含相关OU的信息；后者作为`<Certificate,OrganizationalUnitIdentifier>`（一个被称为`OrganizationalUnitIdentifiers`的yaml数组的项）的一部分被定义；其中`Certificate`表示通往（根或中间）CA的证书的相对路径，这些CA用于为组织成员发证（如./cacerts/cacert.pem）；`OrganizationalUnitIdentifier`表示预期会出现在X.509证书中的实际字符串（如“COP”）
-
-
-* (optional) a folder `crls` to include the considered CRLs
-
-    * （可选）文件夹`crls`包含相关CRL
-
-* a folder `keystore` to include a PEM file with the node’s signing key; we emphasise that currently RSA keys are not supported
-
-    * 文件夹`keystore`包含一个PEM文件及节点的签名密钥；我们必须强调：现阶段还不支持RSA密钥
-
-* a folder `signcerts` to include a PEM file with the node’s X.509 certificate
-
-    * 文件夹`signcerts`包含一个PEM文件及节点的X.509证书
-
-* (optional) a folder `tlscacerts` to include PEM files each corresponding to a TLS root CA’s certificate
-
-    * （可选）文件夹`tlscacerts`包含如下PEM文件：每个PEM文件对应于一个根TLS根CA的证书
-
-* (optional) a folder `tlsintermediatecerts` to include PEM files each corresponding to an intermediate TLS CA’s certificate
-
-    * （可选）文件夹`tlsintermediatecerts`包含如下PEM文件：每个PEM文件对应于一个中间TLS CA的证书
-
-In the configuration file of the node (core.yaml file for the peer, and orderer.yaml for the orderer), one needs to specify the path to the mspconfig folder, and the MSP Identifier of the node’s MSP. The path to the mspconfig folder is expected to be relative to FABRIC_CFG_PATH and is provided as the value of parameter `mspConfigPath` for the peer, and `LocalMSPDir` for the orderer. The identifier of the node’s MSP is provided as a value of parameter `localMspId` for the peer and `LocalMSPID` for the orderer. These variables can be overriden via the environment using the CORE prefix for peer (e.g. CORE_PEER_LOCALMSPID) and the ORDERER prefix for the orderer (e.g. ORDERER_GENERAL_LOCALMSPID). Notice that for the orderer setup, one needs to generate, and provide to the orderer the genesis block of the system channel. The MSP configuration needs of this block are detailed in the next section.
-
-在节点的配置文件中（对peer节点而言配置文件是core.yaml文件，对orderer节点而言则是orderer.yaml文件），我们需要指定到mspconfig文件夹的路径，以及节点的MSP的MSP标识符。到mspconfig文件夹的路径预期是一个对FABRIC_CFG_PATH的相对路径，且会作为参数`mspConfigPath`和`LocalMSPDir`的值分别提供给peer节点和orderer节点。节点的MSP的MSP标识符则会作为参数`localMspId`和`LocalMSPID`的值分别提供给peer节点和orderer节点。运行环境可以通过为peer使用CORE前缀（例如CORE_PEER_LOCALMSPID）及为orderer使用ORDERER前缀（例如 ORDERER_GENERAL_LOCALMSPID）对以上变量进行覆写。注意：对于orderer的设置，我们需要生成并为orderer提供系统channel的创世区块。MSP配置对该区块的需求详见后面的章节。
-
-*Reconfiguration* of a “local” MSP is only possible manually, and requires that the peer or orderer process is restarted. In subsequent releases we aim to offer online/dynamic reconfiguration (i.e. without requiring to stop the node by using a node managed system chaincode).
-
-对“本地”的MSP进行*重新配置*只能手动进行，且该过程需要重启peer节点和orderer节点。在随后的版本中我们计划提供在线/动态的重新配置的功能（通过使用一个由节点管理的系统chaincode，使得我们不必停止node）。
-
-##Channel MSP 的设置
-
-At the genesis of the system, verification parameters of all the MSPs that appear in the network need to be specified, and included in the system channel’s genesis block. Recall that MSP verification parameters consist of the MSP identifier, the root of trust certificates, intermediate CA and admin certificates, as well as OU specifications and CRLs. The system genesis block is provided to the orderers at their setup phase, and allows them to authenticate channel creation requests. Orderers would reject the system genesis block, if the latter includes two MSPs with the same identifier, and consequently the bootstrapping of the network would fail.
-
-在系统起始阶段，我们需要指定在网络中出现的所有MSP的验证参数，且这些参数需要在系统channel的创世区块中指定。前文我们提到，MSP的验证参数包括MSP标识符、信任源证书、中间CA和管理员的证书，以及OU说明和CLR。系统的创世区块会在orderer节点设置阶段被提供给它们，且允许它们批准创建channel的请求。如果创世区块包含两个有相同标识符的MSP，那么orderer节点将拒绝系统创世区块，导致网络引导程序执行失败。
-
-For application channels, the verification components of only the MSPs that govern a channel need to reside in the channel’s genesis block. We emphasise that it is **the responsibility of the application** to ensure that correct MSP configuration information is included in the genesis blocks (or the most recent configuration block) of a channel prior to instructing one or more of their peers to join the channel.
-
-对于应用程序channel，创世区块中需要包含管理channel的那部分MSP的验证组件。我们在此强调，**应用程序要肩负以下责任**：在令一个或多个peer节点加入到channel中之前，确保channel的创世区块（或最新的配置区块）包含正确的MSP配置信息。
-
-When bootstrapping a channel with the help of the configtxgen tool, one can configure the channel MSPs by including the verification parameters of MSP in the mspconfig folder, and setting that path in the relevant section in `configtx.yaml`.
-
-在configtxgen工具的帮助下引导架设channel时，我们这样来配置channel MSP：将MSP的验证参数加入mspconfig文件夹，并将该路径加入到`configtx.yaml`文件的相关部分。
-
-Reconfiguration of an MSP on the channel, including announcements of the certificate revocation lists associated to the CAs of that MSP is achieved through the creation of a `config_update` object by the owner of one of the administrator certificates of the MSP. The client application managed by the admin would then announce this update to the channels in which this MSP appears.
-
-要想对channel中MSP的重新配置，包括发布与MSP的CA相关的证书吊销列表，需要通过MSP管理员证书的所有者创建`config_update`对象来实现。由管理员管理的客户端应用将向该MSP所在的各个channel发布更新。
-
-##最好的实践
-
-In this section we elaborate on best practices for MSP configuration in commonly met scenarios.
-
-在本节，我们将详述一般情况下MSP配置的最佳实践。
-
-**1) Mapping between organizations/corporations and MSPs**
-
-**为组织与MSP建立映射**
-
-We recommend that there is a one-to-one mapping between organizations and MSPs. If a different mapping type of mapping is chosen, the following needs to be to considered:
-
-我们建议组织和MSP之间建立一一映射。如果选择其他类型的映射，那么需要注意以下几点：
-
-* **One organization employing various MSPs.** This corresponds to the case of an organization including a variety of divisions each represented by its MSP, either for management independence reasons, or for privacy reasons. In this case a peer can only be owned by a single MSP, and will not recognize peers with identities from other MSPs as peers of the same organization. The implication of this is that peers may share through gossip organization-scoped data with a set of peers that are members of the same subdivision, and NOT with the full set of providers constituting the actual organization.
-
-    * **一个组织对应多个MSP。**这对应于下面这种情况：（无论出于独立管理的原因还是私人原因）一个组织有各种各样的部门，每个部门以其MSP为代表。在这种情况下，一个peer节点只能被单个MSP拥有，且不会识别相同组织内标识在其他MSP的节点。这就是说，peer节点可以与相同子分支下的一系列其他peer节点共享组织数据，而不是所有构成组织的节点。
-
-* **Multiple organizations using a single MSP.** This corresponds to a case of a consortium of organisations that are governed by similar membership architecture. One needs to know here that peers would propagate organization-scoped messages to the peers that have an identity under the same MSP regardless of whether they belong to the same actual organization. This is a limitation of the granularity of MSP definition, and/or of the peer’s configuration.
-
-    * **多个组织对应一个MSP。**这对应于下面这种情况：一个由相似成员结构所管理的组织联盟。这时，peer节点可以与相同MSP下的其他节点互发组织范围的数据，节点是否属于同一组织并不重要。这对于MSP的定义及peer节点的配置是个限制。
-
-**2) One organization has different divisions (say organizational units), to which it wants to grant access to different channels.**
-
-**一个组织有多个分支（称为组织单元），各个分支连接到组织想要获取访问权限的不同channel**
-
-有两个方法进行处理：
-
-* **Define one MSP to accommodate membership for all organization’s members.** Configuration of that MSP would consist of a list of root CAs, intermediate CAs and admin certificates; and membership identities would include the organizational unit (OU) a member belongs to. Policies can then be defined to capture members of a specific OU, and these policies may constitute the read/write policies of a channel or endorsement policies of a chaincode. A limitation of this approach is that gossip peers would consider peers with membership identities under their local MSP as members of the same organization, and would consequently gossip with them organisation-scoped data (e.g. their status).
-
-    * **定义一个MSP来容纳所有组织的全部成员。**MSP的配置包含一个根CA、中间CA和管理员证书的列表；成员身份会包含一个组织单元（OU）的所属关系。接下来可以定义用于获取特定OU成员的策略，这些策略可以建立channel的读写策略或者chaincode的背书策略。这种方法的局限是gossip peer节点会本地MSP下的其他peer节点当做相同组织内的成员，并与之分享组织范围内的数据。
-
-* **Defining one MSP to represent each division.** This would involve for each division, a set of certificates for root CAs, intermediate CAs, and admin specifying Certs, such that there is no overlapping certification path across MSPs. This would mean that, for example, a different intermediate CA per subdivision is employed. Here the disadvantage is the management of more than one MSPs instead of one, but this circumvents the issue present in the previous approach. One could also define one MSP for each division by leveraging an OU extension of the MSP configuration.
-
-    * **定义一个MSP来表示每个分支。**这需要为每个分支引入一组根CA证书、中间CA证书和管理员证书，这样每条通往MSP的路径都不会重叠。这意味着，每个子分支的不同中间CA都会被利用起来。这样做的缺点是要管理多个MSP，不过这避免了前面方法出现的问题。我们也可以利用MSP配置的OU扩展来为每个分支定义一个MSP。
-
-**3) Separating clients from peers of the same organization.**
-
-**将客户从相同组织的peer节点中分离**
-
-In many cases it is required that the “type” of an identity is retrievable from the identity itself (e.g. it may be needed that endorsements are guaranteed to have derived by peers, and not clients or nodes acting solely as orderers).
-
-多数情况下，一个身份的“类型”被要求能够从身份本身获取（可能当背书要保证：背书节点由peers充当，而非客户端或者仅充当orders的节点时，需要该特性支持）。
-
-There is limited support for such requirements.
-
-下面是对这些要求的有限支持。
-
-One way to allow for this separation is to to create a separate intermediate CA for each node type - one for clients and one for peers/orderers; and configure two different MSPs - one for clients and one for peers/orderers. Channels this organization should be accessing would need to include both MSPs, while endorsement policies will leverage only the MSP that refers to the peers. This would ultimately result in the organization being mapped to two MSP instances, and would have certain consequences on the way peers and clients interact.
-
-一种支持这种分离的方法是为每个节点类型创建一个分离的中间CA：一个为客户，一个为peer节点或orderer节点；并配置两个不同的MSP：一个为客户，一个为peer节点或orderer节点。该组织要访问的channel需要同时包含两个MSP，不过背书策略将只用到服务peer节点的MSP。这最终导致组织与两个MSP实例建立映射，并对peer节点与客户间的交流产生特定影响。
-
-Gossip would not be drastically impacted as all peers of the same organization would still belong to one MSP. Peers can restrict the execution of certain system chaincodes to local MSP based policies. For example, peers would only execute “joinChannel” request if the request is signed by the admin of their local MSP who can only be a client (end-user should be sitting at the origin of that request). We can go around this inconsistency if we accept that the only clients to be members of a peer/orderer MSP would be the administrators of that MSP.
-
-由于所以同一组织的peer节点仍属于相同的MSP，所以通讯不会受到严重影响。peer节点可以把特定系统chaincode的执行控制在本地MSP的策略范围内。例如：只有请求被本地MSP的管理员签署（其只能是一个客户），peer节点才会执行“joinChannel”的请求（终端用户应该处于该请求的起点）。如果我们接受这样一个前提：只有客户成为MSP peer节点或orderer节点的一员，才能成员MSP的管理员，那么我们就可以绕过这个矛盾。
-
-Another point to be considered with this approach is that peers authorize event registration requests based on membership of request originator within their local MSP. Clearly, since the originator of the request is a client, the request originator is always doomed to belong to a different MSP than the requested peer and the peer would reject the request.
-
-该方法还要注意，peer节点授权事件登记的请求，是基于本地MSP内请求的发起成员。简而言之，由于请求的发起者是一个客户，故请求发起者必定隶属于和被请求的peer节点不同的MSP，这会导致peer节点拒绝该请求。
-
-**4) Admin and CA certificates.**
-
-**管理员和CA的证书**
-
-It is important to set MSP admin certificates to be different than any of the certificates considered by the MSP for `root of trust`, or intermediate CAs. This is a common (security) practice to separate the duties of management of membership components from the issuing of new certificates, and/or validation of existing ones.
-
-将MSP管理员证书设置得与任何MSP，或中间CA处理的其他证书都不同是很重要的。这是一种常见的安全做法，即将成员管理的责任从发行新证书与验证已有证书中拆分出来。
-
-**5) Blacklisting an intermediate CA.**
-
-**将中间CA加入黑名单**
-
-As mentioned in previous sections, reconfiguration of an MSP is achieved by reconfiguration mechanisms (manual reconfiguration for the local MSP instances, and via properly constructed `config_update` messages for MSP instances of a channel). Clearly, there are two ways to ensure an intermediate CA considered in an MSP is no longer considered for that MSP’s identity validation:
-
-就像上文所述，重新配置MSP是通过一种重配置机制完成的（手动重新配置本地MSP实例，并通过channel合理构建发送给MSP实例的`config_update`消息）。显然，我们有两种方法保证一个中间CA被MSP身份验证机制彻底忽视：
-
-* Reconfigure the MSP to no longer include the certificate of that intermediate CA in the list of trusted intermediate CA certs. For the locally configured MSP, this would mean that the certificate of this CA is removed from the `intermediatecerts` folder.
-
-    * 重新配置MSP并使它的*信任中间CA证书列表*不再包含该中间CA的证书。对于本地重新配置的MSP，这意味着该CA的证书从`intermediatecerts`文件夹中被删除了。
-
-* Reconfigure the MSP to include a CRL produced by the root of trust which denounces the mentioned intermediate CA’s certificate.
-    
-    * 重新配置MSP并使它包含由信任源产生的CRL，该CRL会通知MSP废止中间CA证书的使用。
-
-In the current MSP implementation we only support method (1) as it is simpler and does not require blacklisting the no longer considered intermediate CA.
-
-在目前的MSP实现中，我们只支持上述的第一个方法，因为它更加简单，且并不需要把早就不用考虑的中间CA列入黑名单。
-
-***5) CAs and TLS CAs*
-
-***5) CA 和 TLS CA*
-
-MSP identities’ root CAs and MSP TLS certificates’ root CAs (and relative intermediate CAs) need to be declared in different folders. This is to avoid confusion between different classes of certificates. It is not forbidden to reuse the same CAs for both MSP identities and TLS certificates but best practices suggest to avoid this in production.
-
-MSP 身份的根CA及MSP TLS证书的根CA（以及相关的中间CA）需要在不同的文件夹中声明。这是为了避免混淆不同等级的证书。且MSP身份与TLS证书都允许重用相同的CA，不过我们建议最好在实际中避免这样做。
-
-
-
-
+MSP身份的根CA和MSP TLS证书的根CA（和相关的中间CA）需要在不同的文件夹中声明。这是为了避免不同类别证书之间的混淆。不禁止为MSP身份和TLS证书重复使用相同的CA，但是最佳实践建议在生产中避免这种情况。 
