@@ -1,195 +1,276 @@
+## 通道配置(configtxgen)
+本文档介绍了`configtxgen`的用法，它是操作Hyperledger Fabric通道配置的实用程序。
 
-| 原文 | 作者 | 审核修正 |
-| --- | --- | --- |
-| [原文](http://hyperledger-fabric.readthedocs.io/en/latest/configtxgen.html) | Fei Cao |  |
+目前，该工具主要侧重于生成用于引导orderer的创世区块，但是将来要增强生成新的通道配置以及重新配置现有通道。  
 
+### 配置profile
+为`configtxgen`工具提供配置参数的主要供给是文件`configtx.yaml`。这个位于fabric.git库的`fabric/sampleconfig/configtx.yaml`位置。
 
-This document describe the usage for the configtxgen utility for manipulating Hyperledger Fabric channel configuration.
+这个配置文件主要分为三部分：
 
-本文档描述了`configtxgen`工具的用法，该工具用来操作超级账本Fabric的通道配置。
+1. `Profiles`部分。默认情况下，这个部分包含一些可以用于开发和测试场景示范配置，使用了fabric.git树中的密钥材料。这些profile对于组织一个实际的部署profile是个很好的起点。`configtxgen`工具允许你用`-profile`标志来指定profile。profile可以明确地表明所有配置，但通常从第3部分(默认部分)继承配置。  
+2. `Organizations`部分。默认情况下，这部分包含指向sampleconfig MSP定义的一个简单引用。对于生产部署，示范组织会被移除，网络成员的MSP定义会被引用和定义。`Organizations`部分的每个元素都可以打上一个锚点标签如`&orgName`，这允许这个定义被`Profiles`部分引用。  
+3. 默认部分。这里有`Orderer`和`Application`部分的默认配置，包括象`BatchTimeout`这样的属性和通常用作profile的基本继承值的属性。  
 
-For now, the tool is primarily focused on generating the genesis block for bootstrapping the orderer, but it is intended to be enhanced in the future for generating new channel configurations as well as reconfiguring existing channels.
+这个配置文件可以被编辑，或者单个属性可能被设置环境变量覆盖，比如`CONFIGTX_ORDERER_ORDERERTYPE=kafka`。请注意，`Profiles` 元素和profile名称不需要指定。
 
-目前，该工具主要侧重于生成引导共识节点的创世纪块，但是将来预计增加生成新通道的配置以及重新配置已有的通道。
+### 引导orderer
+创建一个期望的配置profile，简单调用：
+```
+$ configtxgen -profile <profile_name> -outputBlock orderer_genesisblock.pb
+```
+将在当面目录下创建一个`orderer_genesisblock.pb`文件。这个创世区块被用于引导排序系统通道，该通道被orderer用于授权和编排其他通道的创建。默认情况下，由`configtxgen`生成，编码进创世区块的通道ID是`testchainid`。建议你修改这个值为某个全局唯一的值。  
 
-## Configuration Profiles - 配置文件
+为了利用生成的创世区块，在启动orderer之前，需要设定环境变量：
+```
+ORDERER_GENERAL_GENESISMETHOD=file
+ORDERER_GENERAL_GENESISFILE=$PWD/orderer_genesisblock.pb
+```
+或者修改配置文件orderer.yaml，将上述值包含进文件中。  
 
-The configuration parameters supplied to the configtxgen tool are primarily provided by the configtx.yaml file. This file is located at fabric/sampleconfig/configtx.yaml in the fabric.git repository.
+### 创建一个通道
+这个工具可以通过执行下列命令输出一个通道创建tx：
+```
+$ configtxgen -profile <profile_name> -channelID <channel_name> -outputCreateChannelTx <tx_filename>
+```
+这会输出一个可以广播出去创建通道的marshaled `Envelope`消息。
 
-configtxgen工具的配置参数主要由`configtx.yaml`文件提供。在fabric库中，配置文件在`fabric/sampleconfig/configtx.yaml`。
-
-This configuration file is split primarily into three pieces.
-
-此配置文件主要分为三部分。
-
-1.The Profiles section. By default, this section includes some sample configurations which can be used for development or testing scenarios, and refer to crypto material present in the fabric.git tree. These profiles can make a good starting point for construction a real deployment profile. The configtxgen tool allows you to specify the profile it is operating under by passing the -profile flag. Profiles may explicitly declare all configuration, but usually inherit configuration from the defaults in (3) below.
-
-1.`Profiles`部分。默认情况下，这部分包含一些用于开发或测试场景的示例配置，这些配置涉及fabric目录中加密部分。这些配置能为构建一个真正开发配置做一个良好开始。`configtxgen`工具允许你通过`-profile`标签来指定配置文件。`Profiles`部分可以显式声明所有配置，但是通常都是从一下（3）默认配置中继承。
-
-2.The Organizations section. By default, this section includes a single reference to the sampleconfig MSP definition. For production deployments, the sample organization should be removed, and the MSP definitions of the network members should be referenced and defined instead. Each element in the Organizations section should be tagged with an anchor label such as &orgName which will allow the definition to be referenced in the Profiles sections.
-
-2.`Organizations`部分。默认情况下，这部分包含实力配置MSP定义的单一引用。对于生产部署，应该删除示例配置，并应引用和定义网络成员的MSP定义。`Organizations`部分每一个元素都必须带有锚标签，如`&orgName`，这些标签在`Profiles`部分引用。
-
-3.The default sections. There are default sections for Orderer and Application configuration, these include attributes like BatchTimeout and are generally used as the base inherited values for the profiles.
-
-3.默认部分。此部分包括共识和应用部分的默认配置，包括一些属性配置，如`BatchTimeout`和一般用作继承的基础值。
-
-This configuration file may be edited, or, individual properties may be overridden by setting environment variables, such as CONFIGTX_ORDERER_ORDERERTYPE=kafka. Note that the Profiles element and profile name do not need to be specified.
-
-这个配置文件可以被编辑，或者通过设置环境变量来重写属性值，如`CONFIGTX_ORDERER_ORDERERTYPE=kafka`。注意，不需要指定配置文件元素和配置文件名称。
-
-## Bootstrapping the orderer - 引导共识
-
-After creating a configuration profile as desired, simply invoke
-
-创建配置文件后，简单调用
-
-~~~
-configtxgen -profile <profile_name>
-~~~
-
-This will produce a genesis.block file in the current directory. You may optionally specify another filename by passing in the -path parameter, or, you may skip the writing of the file by passing the dryRun parameter if you simply wish to test parsing of the file.
-
-这会在当前文件目录下生成`genesis.block`。你也可以通过`-path`参数指定其他文件名。如果你只希望测试这个文件，可以通过`dryRun`参数来跳过创建文件。
-
-Then, to utilize this genesis block, before starting the orderer, simply specify ORDERER_GENERAL_GENESISMETHOD=file and ORDERER_GENERAL_GENESISFILE=$PWD/genesis.block or modify the orderer.yaml file to encode these values.
-
-然后为了使用生成的创世快，在启动orderer之前，简单的通过指定`ORDERER_GENERAL_GENESISMETHOD=file` 和`ORDERER_GENERAL_GENESISFILE=$PWD/genesis.block` 或者修改`orderer.yaml`文件编辑这些属性值。
-
-## Creating a channel - 创建通道
-
-The tool can also output a channel creation tx by executing
-
-此工具同样可以创建通道交易通过执行
-
-~~~
-configtxgen -profile <profile_name> -channelID <channel_name> -outputCreateChannelTx <tx_filename>
-~~~
-
-This will output a marshaled Envelope message which may be sent to broadcast to create a channel.
-
-这将输出一个`Envelope`消息，用来发送广播来创建通道。
-
-## Reviewing a configuration - 检查配置
-
-In addition to creating configuration, the configtxgen tool is also capable of inspecting configuration.
-
-除了创建配置，`configtxgen`工具同样提供检查配置的功能。
-
-It supports inspecting both configuration blocks, and configuration transactions. You may use the inspect flags -inspectBlock and -inspectChannelCreateTx respectively with the path to a file to inspect to output a human readable (JSON) representation of the configuration.
-
-它支持检查配置块和配置交易。你可以用检查标签`-inspectBlock` 和 `-inspectChannelCreateTx` 分别指定文件路径来输出可读的（JSON）配置。
-
-You may even wish to combine the inspection with generation. For example:
-
-你甚至可能希望将创建与检查相结合。例如：
-
-~~~
-$ build/bin/configtxgen -channelID foo -outputBlock foo.block -inspectBlock foo.block
-2017/03/01 21:24:24 Loading configuration
-2017/03/01 21:24:24 Checking for configtx.yaml at:
-2017/03/01 21:24:24 Checking for configtx.yaml at:
-2017/03/01 21:24:24 Checking for configtx.yaml at: /home/yellickj/go/src/github.com/hyperledger/fabric/common/configtx/tool
-2017/03/01 21:24:24 map[orderer:map[BatchSize:map[MaxMessageCount:10 AbsoluteMaxBytes:99 MB PreferredMaxBytes:512 KB] Kafka:map[Brokers:[127.0.0.1:9092]] Organizations:<nil> OrdererType:solo Addresses:[127.0.0.1:7050] BatchTimeout:10s] application:map[Organizations:<nil>] profiles:map[SampleInsecureSolo:map[Orderer:map[BatchTimeout:10s BatchSize:map[MaxMessageCount:10 AbsoluteMaxBytes:99 MB PreferredMaxBytes:512 KB] Kafka:map[Brokers:[127.0.0.1:9092]] Organizations:<nil> OrdererType:solo Addresses:[127.0.0.1:7050]] Application:map[Organizations:<nil>]] SampleInsecureKafka:map[Orderer:map[Addresses:[127.0.0.1:7050] BatchTimeout:10s BatchSize:map[AbsoluteMaxBytes:99 MB PreferredMaxBytes:512 KB MaxMessageCount:10] Kafka:map[Brokers:[127.0.0.1:9092]] Organizations:<nil> OrdererType:kafka] Application:map[Organizations:<nil>]] SampleSingleMSPSolo:map[Orderer:map[OrdererType:solo Addresses:[127.0.0.1:7050] BatchTimeout:10s BatchSize:map[MaxMessageCount:10 AbsoluteMaxBytes:99 MB PreferredMaxBytes:512 KB] Kafka:map[Brokers:[127.0.0.1:9092]] Organizations:[map[Name:SampleOrg ID:DEFAULT MSPDir:msp BCCSP:map[Default:SW SW:map[Hash:SHA3 Security:256 FileKeyStore:map[KeyStore:<nil>]]] AnchorPeers:[map[Host:127.0.0.1 Port:7051]]]]] Application:map[Organizations:[map[Name:SampleOrg ID:DEFAULT MSPDir:msp BCCSP:map[Default:SW SW:map[Hash:SHA3 Security:256 FileKeyStore:map[KeyStore:<nil>]]] AnchorPeers:[map[Port:7051 Host:127.0.0.1]]]]]]] organizations:[map[Name:SampleOrg ID:DEFAULT MSPDir:msp BCCSP:map[Default:SW SW:map[Hash:SHA3 Security:256 FileKeyStore:map[KeyStore:<nil>]]] AnchorPeers:[map[Host:127.0.0.1 Port:7051]]]]]
-2017/03/01 21:24:24 Generating genesis block
-2017/03/01 21:24:24 Writing genesis block
-2017/03/01 21:24:24 Inspecting block
-2017/03/01 21:24:24 Parsing genesis block
-Config for channel: foo
+### 显示一个配置
+除了生成配置以外，`configtxgen`工具还有查看配置的能力。  
+它支持查看配置区块和配置交易。可以分别使用查看标志`-inspectBlock`和`-inspectChannelCreateTx`并在后面附加文件路径来输出一个JSON串来显示配置信息。  
+还可以对查看标志进行组合，例如：
+```json
+$ configtxgen -channelID foo -outputBlock foo_genesisblock.pb -inspectBlock foo_genesisblock.pb
+2017-11-02 17:56:04.489 EDT [common/tools/configtxgen] main -> INFO 001 Loading configuration
+2017-11-02 17:56:04.564 EDT [common/tools/configtxgen] doOutputBlock -> INFO 002 Generating genesis block
+2017-11-02 17:56:04.564 EDT [common/tools/configtxgen] doOutputBlock -> INFO 003 Writing genesis block
+2017-11-02 17:56:04.564 EDT [common/tools/configtxgen] doInspectBlock -> INFO 004 Inspecting block
+2017-11-02 17:56:04.564 EDT [common/tools/configtxgen] doInspectBlock -> INFO 005 Parsing genesis block
 {
-    "": {
-        "Values": {},
-        "Groups": {
-            "/Channel": {
-                "Values": {
-                    "HashingAlgorithm": {
-                        "Version": "0",
-                        "ModPolicy": "",
-                        "Value": {
-                            "name": "SHA256"
-                        }
-                    },
-                    "BlockDataHashingStructure": {
-                        "Version": "0",
-                        "ModPolicy": "",
-                        "Value": {
-                            "width": 4294967295
-                        }
-                    },
-                    "OrdererAddresses": {
-                        "Version": "0",
-                        "ModPolicy": "",
-                        "Value": {
-                            "addresses": [
-                                "127.0.0.1:7050"
-                            ]
-                        }
-                    }
-                },
-                "Groups": {
-                    "/Channel/Orderer": {
-                        "Values": {
-                            "ChainCreationPolicyNames": {
-                                "Version": "0",
-                                "ModPolicy": "",
-                                "Value": {
-                                    "names": [
-                                        "AcceptAllPolicy"
-                                    ]
-                                }
+  "data": {
+    "data": [
+      {
+        "payload": {
+          "data": {
+            "config": {
+              "channel_group": {
+                "groups": {
+                  "Consortiums": {
+                    "groups": {
+                      "SampleConsortium": {
+                        "mod_policy": "/Channel/Orderer/Admins",
+                        "values": {
+                          "ChannelCreationPolicy": {
+                            "mod_policy": "/Channel/Orderer/Admins",
+                            "value": {
+                              "type": 3,
+                              "value": {
+                                "rule": "ANY",
+                                "sub_policy": "Admins"
+                              }
                             },
-                            "ConsensusType": {
-                                "Version": "0",
-                                "ModPolicy": "",
-                                "Value": {
-                                    "type": "solo"
-                                }
-                            },
-                            "BatchSize": {
-                                "Version": "0",
-                                "ModPolicy": "",
-                                "Value": {
-                                    "maxMessageCount": 10,
-                                    "absoluteMaxBytes": 103809024,
-                                    "preferredMaxBytes": 524288
-                                }
-                            },
-                            "BatchTimeout": {
-                                "Version": "0",
-                                "ModPolicy": "",
-                                "Value": {
-                                    "timeout": "10s"
-                                }
-                            },
-                            "IngressPolicyNames": {
-                                "Version": "0",
-                                "ModPolicy": "",
-                                "Value": {
-                                    "names": [
-                                        "AcceptAllPolicy"
-                                    ]
-                                }
-                            },
-                            "EgressPolicyNames": {
-                                "Version": "0",
-                                "ModPolicy": "",
-                                "Value": {
-                                    "names": [
-                                        "AcceptAllPolicy"
-                                    ]
-                                }
-                            }
+                            "version": "0"
+                          }
                         },
-                        "Groups": {}
+                        "version": "0"
+                      }
                     },
-                    "/Channel/Application": {
-                        "Values": {},
-                        "Groups": {}
-                    }
-                }
+                    "mod_policy": "/Channel/Orderer/Admins",
+                    "policies": {
+                      "Admins": {
+                        "mod_policy": "/Channel/Orderer/Admins",
+                        "policy": {
+                          "type": 1,
+                          "value": {
+                            "rule": {
+                              "n_out_of": {
+                                "n": 0
+                              }
+                            },
+                            "version": 0
+                          }
+                        },
+                        "version": "0"
+                      }
+                    },
+                    "version": "0"
+                  },
+                  "Orderer": {
+                    "mod_policy": "Admins",
+                    "policies": {
+                      "Admins": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                          "type": 3,
+                          "value": {
+                            "rule": "MAJORITY",
+                            "sub_policy": "Admins"
+                          }
+                        },
+                        "version": "0"
+                      },
+                      "BlockValidation": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                          "type": 3,
+                          "value": {
+                            "rule": "ANY",
+                            "sub_policy": "Writers"
+                          }
+                        },
+                        "version": "0"
+                      },
+                      "Readers": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                          "type": 3,
+                          "value": {
+                            "rule": "ANY",
+                            "sub_policy": "Readers"
+                          }
+                        },
+                        "version": "0"
+                      },
+                      "Writers": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                          "type": 3,
+                          "value": {
+                            "rule": "ANY",
+                            "sub_policy": "Writers"
+                          }
+                        },
+                        "version": "0"
+                      }
+                    },
+                    "values": {
+                      "BatchSize": {
+                        "mod_policy": "Admins",
+                        "value": {
+                          "absolute_max_bytes": 10485760,
+                          "max_message_count": 10,
+                          "preferred_max_bytes": 524288
+                        },
+                        "version": "0"
+                      },
+                      "BatchTimeout": {
+                        "mod_policy": "Admins",
+                        "value": {
+                          "timeout": "2s"
+                        },
+                        "version": "0"
+                      },
+                      "ChannelRestrictions": {
+                        "mod_policy": "Admins",
+                        "version": "0"
+                      },
+                      "ConsensusType": {
+                        "mod_policy": "Admins",
+                        "value": {
+                          "type": "solo"
+                        },
+                        "version": "0"
+                      }
+                    },
+                    "version": "0"
+                  }
+                },
+                "mod_policy": "Admins",
+                "policies": {
+                  "Admins": {
+                    "mod_policy": "Admins",
+                    "policy": {
+                      "type": 3,
+                      "value": {
+                        "rule": "MAJORITY",
+                        "sub_policy": "Admins"
+                      }
+                    },
+                    "version": "0"
+                  },
+                  "Readers": {
+                    "mod_policy": "Admins",
+                    "policy": {
+                      "type": 3,
+                      "value": {
+                        "rule": "ANY",
+                        "sub_policy": "Readers"
+                      }
+                    },
+                    "version": "0"
+                  },
+                  "Writers": {
+                    "mod_policy": "Admins",
+                    "policy": {
+                      "type": 3,
+                      "value": {
+                        "rule": "ANY",
+                        "sub_policy": "Writers"
+                      }
+                    },
+                    "version": "0"
+                  }
+                },
+                "values": {
+                  "BlockDataHashingStructure": {
+                    "mod_policy": "Admins",
+                    "value": {
+                      "width": 4294967295
+                    },
+                    "version": "0"
+                  },
+                  "HashingAlgorithm": {
+                    "mod_policy": "Admins",
+                    "value": {
+                      "name": "SHA256"
+                    },
+                    "version": "0"
+                  },
+                  "OrdererAddresses": {
+                    "mod_policy": "/Channel/Orderer/Admins",
+                    "value": {
+                      "addresses": [
+                        "127.0.0.1:7050"
+                      ]
+                    },
+                    "version": "0"
+                  }
+                },
+                "version": "0"
+              },
+              "sequence": "0",
+              "type": 0
             }
+          },
+          "header": {
+            "channel_header": {
+              "channel_id": "foo",
+              "epoch": "0",
+              "timestamp": "2017-11-02T21:56:04.000Z",
+              "tx_id": "6acfe1257c23a4f844cc299cbf53acc7bf8fa8bcf8aae8d049193098fe982eab",
+              "type": 1,
+              "version": 1
+            },
+            "signature_header": {
+              "nonce": "eZOKru6jmeiWykBtSDwnkGjyQt69GwuS"
+            }
+          }
         }
-    }
+      }
+    ]
+  },
+  "header": {
+    "data_hash": "/86I/7NScbH/bHcDcYG0/9qTmVPWVoVVfSN8NKMARKI=",
+    "number": "0"
+  },
+  "metadata": {
+    "metadata": [
+      "",
+      "",
+      "",
+      ""
+    ]
+  }
 }
-~~~
-
+```
+上述命令先生成区块，再显示它。  
