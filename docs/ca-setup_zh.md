@@ -717,6 +717,7 @@ The Fabric CA server can be configured to read from an LDAP server.
 In particular, the Fabric CA server may connect to an LDAP server to do the following:
 
 - authenticate an identity prior to enrollment
+
 - retrieve an identity’s attribute values which are used for authorization.
 
 Modify the LDAP section of the Fabric CA server’s configuration file to configure the server to connect to an LDAP server.
@@ -726,6 +727,7 @@ Fabric CA服务端可以配置为连接到一个LDAP服务器。
 特别地，Fabric CA服务端可以连接到一个LDAP服务器来做下面的事情：
 
 - 登录前验证一个身份
+
 - 授权时获取一个身份的属性值
 
 在配置文件中修改LDAP的配置来连接到一个LDAP服务器。
