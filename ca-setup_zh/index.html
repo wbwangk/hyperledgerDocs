@@ -367,18 +367,34 @@
 <p>Fabric CA is a Certificate Authority for Hyperledger Fabric.</p>
 <p>It provides features such as:</p>
 <ol>
-<li>registration of identities, or connects to LDAP as the user registry;</li>
-<li>issuance of Enrollment Certificates (ECerts);</li>
-<li>issuance of Transaction Certificates (TCerts), providing both anonymity and unlinkability when transacting on a Hyperledger Fabric blockchain;</li>
-<li>certificate renewal and revocation.</li>
+<li>
+<p>registration of identities, or connects to LDAP as the user registry;</p>
+</li>
+<li>
+<p>issuance of Enrollment Certificates (ECerts);</p>
+</li>
+<li>
+<p>issuance of Transaction Certificates (TCerts), providing both anonymity and unlinkability when transacting on a Hyperledger Fabric blockchain;</p>
+</li>
+<li>
+<p>certificate renewal and revocation.</p>
+</li>
 </ol>
 <p>Fabric CA为Hyperledger Fabric行使证书机构的功能。</p>
 <p>Fabric CA提供以下功能：</p>
 <ol>
-<li>身份注册，或者将连接到LDAP作为用户注册；</li>
-<li>颁发登录证书(ECerts)；</li>
-<li>颁发交易证书(TCerts)，保证链上交易的匿名性与不可连接性；</li>
-<li>证书续期与撤销</li>
+<li>
+<p>身份注册，或者将连接到LDAP作为用户注册；</p>
+</li>
+<li>
+<p>颁发登录证书(ECerts)；</p>
+</li>
+<li>
+<p>颁发交易证书(TCerts)，保证链上交易的匿名性与不可连接性；</p>
+</li>
+<li>
+<p>证书续期与撤销</p>
+</li>
 </ol>
 <p>Fabric CA consists of both a server and a client component as described later in this document.</p>
 <p>For developers interested in contributing to Fabric CA, see the Fabric CA repository for more information.</p>
@@ -395,9 +411,15 @@
 <h2 id="_2">入门<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <h3 id="_3">前置条件<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Go 1.7+ 或更高版本</li>
-<li>GOPATH 环境变量正确设置</li>
-<li>libtool 和 libtdhl-dev 这两个包安装好</li>
+<li>
+<p>Go 1.7+ 或更高版本</p>
+</li>
+<li>
+<p>GOPATH 环境变量正确设置</p>
+</li>
+<li>
+<p>libtool 和 libtdhl-dev 这两个包安装好</p>
+</li>
 </ul>
 <p>以下命令安装 libtool</p>
 <pre><code># sudo apt install libtool libltdl-dev
@@ -729,17 +751,29 @@ enrollment:
 <h2 id="_7">配置优先级说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>The Fabric CA provides 3 ways to configure settings on the Fabric CA server and client. The precedence order is:</p>
 <ol>
-<li>CLI flags</li>
-<li>Environment variables</li>
-<li>Configuration file</li>
+<li>
+<p>CLI flags</p>
+</li>
+<li>
+<p>Environment variables</p>
+</li>
+<li>
+<p>Configuration file</p>
+</li>
 </ol>
 <p>In the remainder of this document, we refer to making changes to configuration files. However, configuration file changes can be overridden through environment variables or CLI flags.</p>
 <p>For example, if we have the following in the client configuration file:</p>
 <p>Fabric CA 提供3种方式来配置 fabric-ca-server 和 fabric-ca-client 。优先级如下：</p>
 <ol>
-<li>命令行参数</li>
-<li>环境变量</li>
-<li>配置文件</li>
+<li>
+<p>命令行参数</p>
+</li>
+<li>
+<p>环境变量</p>
+</li>
+<li>
+<p>配置文件</p>
+</li>
 </ol>
 <p>接下来，我们试着对配置文件进行修改。配置文件的修改可以被环境变量或者命令行参数覆盖。</p>
 <p>举个例子，假设我们有以下客户端的配置文件：</p>
@@ -776,20 +810,40 @@ enrollment:
 <h2 id="fabric-ca_3">Fabric CA 服务端<a class="headerlink" href="#fabric-ca_3" title="Permanent link">&para;</a></h2>
 <p>This section describes the Fabric CA server.</p>
 <p>You may initialize the Fabric CA server before starting it. This provides an opportunity for you to generate a default configuration file but to review and customize its settings before starting it.</p>
-<p>The Fabric CA server’s home directory is determined as follows:
-- if the FABRIC_CA_SERVER_HOME environment variable is set, use its value;
-- otherwise, if FABRIC_CA_HOME environment variable is set, use its value;
-- otherwise, if the CA_CFG_PATH environment variable is set, use its value;
-- otherwise, use current working directory.</p>
+<p>The Fabric CA server’s home directory is determined as follows:</p>
+<ul>
+<li>
+<p>if the FABRIC_CA_SERVER_HOME environment variable is set, use its value;</p>
+</li>
+<li>
+<p>otherwise, if FABRIC_CA_HOME environment variable is set, use its value;</p>
+</li>
+<li>
+<p>otherwise, if the CA_CFG_PATH environment variable is set, use its value;</p>
+</li>
+<li>
+<p>otherwise, use current working directory.</p>
+</li>
+</ul>
 <p>For the remainder of this server section, we assume that you have set the FABRIC_CA_HOME environment variable to $HOME/fabric-ca/server.</p>
 <p>The instructions below assume that the server configuration file exists in the server’s home directory.</p>
 <p>这一部分说明Fabric CA服务端。</p>
 <p>在启动Fabric CA服务端之前，你可以先初始化Fabric CA服务端。通过初始化，程序会自动生成一份默认配置文件，方便用户在启动前自行修改一些配置项。</p>
-<p>Fabric CA服务端的根目录通过以下方式决定：
-- 如果存在环境变量 <code>FABRIC_CA_SERVER_HOME</code> ，则使用这个值
-- 否则，如果存在环境变量 <code>FABRIC_CA_HOME</code> ，则使用这个值
-- 否则，如果存在环境变量 <code>CA_CFG_PATH</code> ，则使用这个值
-- 否则，使用当前的工作目录作为根目录</p>
+<p>Fabric CA服务端的根目录通过以下方式决定：</p>
+<ul>
+<li>
+<p>如果存在环境变量 <code>FABRIC_CA_SERVER_HOME</code> ，则使用这个值</p>
+</li>
+<li>
+<p>否则，如果存在环境变量 <code>FABRIC_CA_HOME</code> ，则使用这个值</p>
+</li>
+<li>
+<p>否则，如果存在环境变量 <code>CA_CFG_PATH</code> ，则使用这个值</p>
+</li>
+<li>
+<p>否则，使用当前的工作目录作为根目录</p>
+</li>
+</ul>
 <p>本章接下来的部分，我们假设你已经设置了环境变量 <code>FABRIC_CA_HOME</code> ，并且值设置为 <code>$HOME/fabric-ca/server</code>。</p>
 <p>接下来的内容都默认服务端配置文件存在于服务端根目录下。</p>
 <h3 id="_9">初始化服务端<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
@@ -813,23 +867,51 @@ names:
 </code></pre>
 <p>All of the fields above pertain to the X.509 signing key and certificate which is generated by the <code>fabric-ca-server</code> init. This corresponds to the <code>ca.certfile</code> and <code>ca.keyfile</code> files in the server’s configuration file. The fields are as follows:</p>
 <ul>
-<li>cn is the Common Name</li>
-<li>key specifies the algorithm and key size as described below</li>
-<li>O is the organization name</li>
-<li>OU is the organizational unit</li>
-<li>L is the location or city</li>
-<li>ST is the state</li>
-<li>C is the country</li>
+<li>
+<p>cn is the Common Name</p>
+</li>
+<li>
+<p>key specifies the algorithm and key size as described below</p>
+</li>
+<li>
+<p>O is the organization name</p>
+</li>
+<li>
+<p>OU is the organizational unit</p>
+</li>
+<li>
+<p>L is the location or city</p>
+</li>
+<li>
+<p>ST is the state</p>
+</li>
+<li>
+<p>C is the country</p>
+</li>
 </ul>
 <p>上面所有的字段都符合X.509签名与证书规范，可以由<code>fabric-ca-server</code> init命令来生成。服务端配置文件中提到的<code>ca.certfile</code>和<code>ca.keyfile</code>这两个文件也符合X.509规范。字段如下：</p>
 <ul>
-<li>cn 通用名</li>
-<li>key 指明算法和密钥长度</li>
-<li>O 组织</li>
-<li>OU 组织单位</li>
-<li>L 地址或城市</li>
-<li>ST 州（省）</li>
-<li>C 国家</li>
+<li>
+<p>cn 通用名</p>
+</li>
+<li>
+<p>key 指明算法和密钥长度</p>
+</li>
+<li>
+<p>O 组织</p>
+</li>
+<li>
+<p>OU 组织单位</p>
+</li>
+<li>
+<p>L 地址或城市</p>
+</li>
+<li>
+<p>ST 州（省）</p>
+</li>
+<li>
+<p>C 国家</p>
+</li>
 </ul>
 <p>If custom values for the CSR are required, you may customize the configuration file, delete the files specified by the ca.certfile and ca-keyfile configuration items, and then run the fabric-ca-server init -b admin:adminpw command again.</p>
 <p>如果需要修改CSR里面的值，你可以修改配置文件，然后把配置中由<code>ca.certfile</code>和<code>ca.keyfile</code>这两项指明的文件删除。然后再运行一次 <code>fabric-ca-server init -b admin:adminpw</code> 命令。</p>
@@ -973,22 +1055,54 @@ names:
     url: &lt;scheme&gt;://&lt;adminDN&gt;:&lt;adminPassword&gt;@&lt;host&gt;:&lt;port&gt;/&lt;base&gt;
     userfilter: filter
 </code></pre>
-<p>where:
-- scheme is one of ldap or ldaps;
-- adminDN is the distinquished name of the admin user;
-- pass is the password of the admin user;
-- host is the hostname or IP address of the LDAP server;
-- port is the optional port number, where default 389 for ldap and 636 for ldaps;
-- base is the optional root of the LDAP tree to use for searches;
-- filter is a filter to use when searching to convert a login user name to a distinquished name. For example, a value of (uid=%s) searches for LDAP entries with the value of a uid attribute whose value is the login user name. Similarly, (email=%s) may be used to login with an email address.</p>
-<p>其中：
-- scheme ldap或者ldaps;
-- adminDN 管理员的区别名;
-- pass 管理员的密码;
-- host LDAP服务器的域名或者IP;
-- port 可选的端口号，ldap默认为389，ldaps默认为636;
-- base 可选的LDAP树的根，用于搜索时;
-- filter 搜索时的过滤器，把登陆用户名转换为一个区别名。比如，（uid=%s）会搜索uid值等于用户登录名的LDAP实体。类似地，（email=%s）可以用于邮箱地址作为用户名的登陆。</p>
+<p>where:</p>
+<ul>
+<li>
+<p>scheme is one of ldap or ldaps;</p>
+</li>
+<li>
+<p>adminDN is the distinquished name of the admin user;</p>
+</li>
+<li>
+<p>pass is the password of the admin user;</p>
+</li>
+<li>
+<p>host is the hostname or IP address of the LDAP server;</p>
+</li>
+<li>
+<p>port is the optional port number, where default 389 for ldap and 636 for ldaps;</p>
+</li>
+<li>
+<p>base is the optional root of the LDAP tree to use for searches;</p>
+</li>
+<li>
+<p>filter is a filter to use when searching to convert a login user name to a distinquished name. For example, a value of (uid=%s) searches for LDAP entries with the value of a uid attribute whose value is the login user name. Similarly, (email=%s) may be used to login with an email address.</p>
+</li>
+</ul>
+<p>其中：</p>
+<ul>
+<li>
+<p>scheme ldap或者ldaps;</p>
+</li>
+<li>
+<p>adminDN 管理员的区别名;</p>
+</li>
+<li>
+<p>pass 管理员的密码;</p>
+</li>
+<li>
+<p>host LDAP服务器的域名或者IP;</p>
+</li>
+<li>
+<p>port 可选的端口号，ldap默认为389，ldaps默认为636;</p>
+</li>
+<li>
+<p>base 可选的LDAP树的根，用于搜索时;</p>
+</li>
+<li>
+<p>filter 搜索时的过滤器，把登陆用户名转换为一个区别名。比如，（uid=%s）会搜索uid值等于用户登录名的LDAP实体。类似地，（email=%s）可以用于邮箱地址作为用户名的登陆。</p>
+</li>
+</ul>
 <p>The following is a sample configuration section for the default settings for the OpenLDAP server whose docker image is at <code>https://github.com/osixia/docker-openldap</code>.</p>
 <p>下面是一个配置例子，用于OpenLDAP的默认设置，OpenLDAP的docker镜像在<code>https://github.com/osixia/docker-openldap</code>。</p>
 <pre><code>ldap:
@@ -1000,29 +1114,45 @@ names:
 <p>在<code>FABRIC_CA/scripts/run-ldap-tests</code>有一个脚本，这个脚本能启动OpenLDAP的docker镜像，配置它，然后运行<code>FABRIC_CA/cli/server/ldap/ldap_test.go</code>里面的LDAP测试，最后停止OpenLDAP服务器。</p>
 <p>When LDAP is configured, enrollment works as follows:</p>
 <ul>
-<li>The Fabric CA client or client SDK sends an enrollment request with a basic authorization header.</li>
-<li>The Fabric CA server receives the enrollment request, decodes the identity name and password in the authorization header, looks up the DN (Distinquished Name) associated with the identity name using the “userfilter” from the configuration file, and then attempts an LDAP bind with the identity’s password. If the LDAP bind is successful, the enrollment processing is authorized and can proceed.</li>
+<li>
+<p>The Fabric CA client or client SDK sends an enrollment request with a basic authorization header.</p>
+</li>
+<li>
+<p>The Fabric CA server receives the enrollment request, decodes the identity name and password in the authorization header, looks up the DN (Distinquished Name) associated with the identity name using the “userfilter” from the configuration file, and then attempts an LDAP bind with the identity’s password. If the LDAP bind is successful, the enrollment processing is authorized and can proceed.</p>
+</li>
 </ul>
 <p>当LDAP配置好后，登录的流程如下：</p>
 <ul>
-<li>Fabric CA客户端或者客户端SDK发送一个登录请求，带上basic方式的授权头。</li>
-<li>Fabric CA服务端收到登录请求，解码授权头里的身份名和密码，查找与身份名相关联的区别名，（关联方式为配置文件里的&rdquo;userfilter&rdquo;定义的），然后用身份密码尝试一个LDAP绑定。如果LDAP绑定成功，那么登录过程被批准了，能够继续。</li>
+<li>
+<p>Fabric CA客户端或者客户端SDK发送一个登录请求，带上basic方式的授权头。</p>
+</li>
+<li>
+<p>Fabric CA服务端收到登录请求，解码授权头里的身份名和密码，查找与身份名相关联的区别名，（关联方式为配置文件里的&rdquo;userfilter&rdquo;定义的），然后用身份密码尝试一个LDAP绑定。如果LDAP绑定成功，那么登录过程被批准了，能够继续。</p>
+</li>
 </ul>
 <p>When LDAP is configured, attribute retrieval works as follows:</p>
 <ul>
-<li>A client SDK sends a request for a batch of tcerts with one or more attributes to the Fabric CA server.</li>
-<li>The Fabric CA server receives the tcert request and does as follows:</li>
-<li>extracts the enrollment ID from the token in the authorization header (after validating the token);</li>
-<li>does an LDAP search/query to the LDAP server, requesting all of the attribute names received in the tcert request;</li>
-<li>the attribute values are placed in the tcert as normal.</li>
+<li>
+<p>A client SDK sends a request for a batch of tcerts with one or more attributes to the Fabric CA server.</p>
+</li>
+<li>
+<p>The Fabric CA server receives the tcert request and does as follows:
+  extracts the enrollment ID from the token in the authorization header (after validating the token);
+  does an LDAP search/query to the LDAP server, requesting all of the attribute names received in the tcert request;
+  the attribute values are placed in the tcert as normal.</p>
+</li>
 </ul>
 <p>当LDAP配置好了，属性返回的流程如下：</p>
 <ul>
-<li>客户端SDK用一个或多个属性发送一个请求到服务端，请求一批tcerts。</li>
-<li>服务端收到tcert请求，做如下的事:</li>
-<li>在授权头取出登录ID（在验证token后）;</li>
-<li>做一次LDAP查询，向LDAP服务器请求tcert请求中的所有的属性名;</li>
-<li>属性值放置在tcert中。</li>
+<li>
+<p>客户端SDK用一个或多个属性发送一个请求到服务端，请求一批tcerts。</p>
+</li>
+<li>
+<p>服务端收到tcert请求，做如下的事:
+  在授权头取出登录ID（在验证token后）;
+  做一次LDAP查询，向LDAP服务器请求tcert请求中的所有的属性名;
+  属性值放置在tcert中。</p>
+</li>
 </ul>
 <h3 id="_12">构建一个集群<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p>You may use any IP sprayer to load balance to a cluster of Fabric CA servers. This section provides an example of how to set up Haproxy to route to a Fabric CA server cluster. Be sure to change hostname and port to reflect the settings of your Fabric CA servers.</p>
@@ -1051,19 +1181,35 @@ listen http-in
 <p>This section describes how to use the fabric-ca-client command.</p>
 <p>The Fabric CA client’s home directory is determined as follows:</p>
 <ul>
-<li>if the <code>FABRIC_CA_CLIENT_HOME</code> environment variable is set, use its value;</li>
-<li>otherwise, if the <code>FABRIC_CA_HOME</code> environment variable is set, use its value;</li>
-<li>otherwise, if the <code>CA_CFG_PATH</code> environment variable is set, use its value;</li>
-<li>otherwise, use <code>$HOME/.fabric-ca-client</code>.</li>
+<li>
+<p>if the <code>FABRIC_CA_CLIENT_HOME</code> environment variable is set, use its value;</p>
+</li>
+<li>
+<p>otherwise, if the <code>FABRIC_CA_HOME</code> environment variable is set, use its value;</p>
+</li>
+<li>
+<p>otherwise, if the <code>CA_CFG_PATH</code> environment variable is set, use its value;</p>
+</li>
+<li>
+<p>otherwise, use <code>$HOME/.fabric-ca-client</code>.</p>
+</li>
 </ul>
 <p>The instructions below assume that the client configuration file exists in the client’s home directory.</p>
 <p>这一部分讲解如何使用fabric-ca-client的命令。</p>
 <p>Fabric CA客户端的根目录定义规则如下：</p>
 <ul>
-<li>如果存在环境变量 <code>FABRIC_CA_CLIENT_HOME</code> ，则使用这个值</li>
-<li>否则，如果存在环境变量 <code>FABRIC_CA_HOME</code> ，则使用这个值</li>
-<li>否则，如果存在环境变量 <code>CA_CFG_PATH</code> ，则使用这个值</li>
-<li>否则，使用<code>$HOME/.fabric-ca-client</code></li>
+<li>
+<p>如果存在环境变量 <code>FABRIC_CA_CLIENT_HOME</code> ，则使用这个值</p>
+</li>
+<li>
+<p>否则，如果存在环境变量 <code>FABRIC_CA_HOME</code> ，则使用这个值</p>
+</li>
+<li>
+<p>否则，如果存在环境变量 <code>CA_CFG_PATH</code> ，则使用这个值</p>
+</li>
+<li>
+<p>否则，使用<code>$HOME/.fabric-ca-client</code></p>
+</li>
 </ul>
 <p>下面的指引假设客户端的配置文件存在于客户端根目录。</p>
 <h3 id="_13">登陆启动用户<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
@@ -1101,14 +1247,22 @@ listen http-in
 <p>只有已经登录了的身份才能发起注册的请求，而且必须有相应的权限来注册想要注册的身份类型。</p>
 <p>In particular, two authorization checks are made by the Fabric CA server during registration as follows:</p>
 <ol>
-<li>The invoker’s identity must have the “hf.Registrar.Roles” attribute with a comma-separated list of values where one of the value equals the type of identity being registered; for example, if the invoker’s identity has the “hf.Registrar.Roles” attribute with a value of “peer,app,user”, the invoker can register identities of type peer, app, and user, but not orderer.</li>
-<li>The affiliation of the invoker’s identity must be equal to or a prefix of the affiliation of the identity being registered. For example, an invoker with an affiliation of “a.b” may register an identity with an affiliation of “a.b.c” but may not register an identity with an affiliation of “a.c”.</li>
+<li>
+<p>The invoker’s identity must have the “hf.Registrar.Roles” attribute with a comma-separated list of values where one of the value equals the type of identity being registered; for example, if the invoker’s identity has the “hf.Registrar.Roles” attribute with a value of “peer,app,user”, the invoker can register identities of type peer, app, and user, but not orderer.</p>
+</li>
+<li>
+<p>The affiliation of the invoker’s identity must be equal to or a prefix of the affiliation of the identity being registered. For example, an invoker with an affiliation of “a.b” may register an identity with an affiliation of “a.b.c” but may not register an identity with an affiliation of “a.c”.</p>
+</li>
 </ol>
 <p>The following command uses the admin identity’s credentials to register a new identity with an enrollment id of “admin2”, a type of “user”, an affiliation of “org1.department1”, and an attribute named “hf.Revoker” with a value of “true”.</p>
 <p>特别地，注册时Fabric CA服务端做两项权限检查：</p>
 <ol>
-<li>注册发起者的“hf.Registrar.Roles”属性中必须有请求注册的类型。举个例子，如果发起者的“hf.Registrar.Roles”属性的值为“peer,app,user”，那么他能注册的类型为peer，app和user，不能注册orderer。</li>
-<li>发起者的affiliation必须与他请求注册的身份的affiliation相同，或者是所请求注affiliation的前缀。举个例子，一个affiliation为“a.b”的发起者，可以注册一个affiliation为“a.b.c”的身份，但是不能注册一个affiliation为“a.c”的身份。</li>
+<li>
+<p>注册发起者的“hf.Registrar.Roles”属性中必须有请求注册的类型。举个例子，如果发起者的“hf.Registrar.Roles”属性的值为“peer,app,user”，那么他能注册的类型为peer，app和user，不能注册orderer。</p>
+</li>
+<li>
+<p>发起者的affiliation必须与他请求注册的身份的affiliation相同，或者是所请求注affiliation的前缀。举个例子，一个affiliation为“a.b”的发起者，可以注册一个affiliation为“a.b.c”的身份，但是不能注册一个affiliation为“a.c”的身份。</p>
+</li>
 </ol>
 <p>下面的命令使用admin身份的凭证来注册一个新的身份，登录ID是“admin2”，类型为“user”，affiliation为“org1.department1”，还有“hf.Revoker”属性为“true”。</p>
 <pre><code># export FABRIC_CA_CLIENT_HOME=$HOME/fabric-ca/clients/admin
@@ -1185,16 +1339,36 @@ listen http-in
 <p>The following are the supported reasons that can be specified using -r flag:</p>
 <p>下面是<code>-r</code>选项支持的理由：</p>
 <ol>
-<li>unspecified</li>
-<li>keycompromise</li>
-<li>cacompromise</li>
-<li>affiliationchange</li>
-<li>superseded</li>
-<li>cessationofoperation</li>
-<li>certificatehold</li>
-<li>removefromcrl</li>
-<li>privilegewithdrawn</li>
-<li>aacompromise</li>
+<li>
+<p>unspecified</p>
+</li>
+<li>
+<p>keycompromise</p>
+</li>
+<li>
+<p>cacompromise</p>
+</li>
+<li>
+<p>affiliationchange</p>
+</li>
+<li>
+<p>superseded</p>
+</li>
+<li>
+<p>cessationofoperation</p>
+</li>
+<li>
+<p>certificatehold</p>
+</li>
+<li>
+<p>removefromcrl</p>
+</li>
+<li>
+<p>privilegewithdrawn</p>
+</li>
+<li>
+<p>aacompromise</p>
+</li>
 </ol>
 <p>For example, the bootstrap admin who is associated with root of the affiliation tree can revoke peer1‘s identity as follows:</p>
 <p>举个例子，有着根affiliation的admin可以回收peer1身份：</p>
@@ -1233,28 +1407,48 @@ fabric-ca-client revoke -s $serial -a $aki -r affiliationchange
 <h3 id="postgres-ssl">Postgres SSL 配置<a class="headerlink" href="#postgres-ssl" title="Permanent link">&para;</a></h3>
 <h4 id="postgre">配置Postgre服务器的基本步骤：<a class="headerlink" href="#postgre" title="Permanent link">&para;</a></h4>
 <ol>
-<li>In postgresql.conf, uncomment SSL and set to “on” (SSL=on)</li>
-<li>Place certificate and key files in the Postgres data directory.</li>
+<li>
+<p>In postgresql.conf, uncomment SSL and set to “on” (SSL=on)</p>
+</li>
+<li>
+<p>Place certificate and key files in the Postgres data directory.</p>
+</li>
 </ol>
 <p>Instructions for generating self-signed certificates for: https://www.postgresql.org/docs/9.5/static/ssl-tcp.html</p>
 <p>Note: Self-signed certificates are for testing purposes and should not be used in a production environment</p>
 <ol>
-<li>在postgresql.conf中打开SSL（SSL=on）</li>
-<li>把证书和密钥文件放在Postgres数据目录下。</li>
+<li>
+<p>在postgresql.conf中打开SSL（SSL=on）</p>
+</li>
+<li>
+<p>把证书和密钥文件放在Postgres数据目录下。</p>
+</li>
 </ol>
 <p>如何生成自签名的证书：https://www.postgresql.org/docs/9.5/static/ssl-tcp.html</p>
 <p>注意：自签名的证书用于测试目的，请勿用于生产环境。</p>
 <h4 id="postgres-">Postgres 服务器 - 需要客户端证书<a class="headerlink" href="#postgres-" title="Permanent link">&para;</a></h4>
 <ol>
-<li>Place certificates of the certificate authorities (CAs) you trust in the file root.crt in the Postgres data directory</li>
-<li>In postgresql.conf, set “ssl_ca_file” to point to the root cert of the client (CA cert)</li>
-<li>Set the clientcert parameter to 1 on the appropriate hostssl line(s) in pg_hba.conf.</li>
+<li>
+<p>Place certificates of the certificate authorities (CAs) you trust in the file root.crt in the Postgres data directory</p>
+</li>
+<li>
+<p>In postgresql.conf, set “ssl_ca_file” to point to the root cert of the client (CA cert)</p>
+</li>
+<li>
+<p>Set the clientcert parameter to 1 on the appropriate hostssl line(s) in pg_hba.conf.</p>
+</li>
 </ol>
 <p>For more details on configuring SSL on the Postgres server, please refer to the following Postgres documentation: https://www.postgresql.org/docs/9.4/static/libpq-ssl.html</p>
 <ol>
-<li>把你信任的CA证书放在Postgres数据目录里的root.crt里</li>
-<li>在postgresql.conf里，设置“ssl_ca_file”指向客户端的根证书</li>
-<li>在pg_hba.conf里，在正确的hostssl行把clientcert参数设为1</li>
+<li>
+<p>把你信任的CA证书放在Postgres数据目录里的root.crt里</p>
+</li>
+<li>
+<p>在postgresql.conf里，设置“ssl_ca_file”指向客户端的根证书</p>
+</li>
+<li>
+<p>在pg_hba.conf里，在正确的hostssl行把clientcert参数设为1</p>
+</li>
 </ol>
 <p>更多信息：https://www.postgresql.org/docs/9.4/static/libpq-ssl.html</p>
 <h3 id="mysql-ssl">MySQL SSL 配置<a class="headerlink" href="#mysql-ssl" title="Permanent link">&para;</a></h3>
